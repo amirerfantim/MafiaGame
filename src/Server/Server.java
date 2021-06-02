@@ -1,6 +1,5 @@
 package Server;
 
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -8,6 +7,8 @@ import java.text.SimpleDateFormat;
 
 // the server that can be run as a console
 public class Server {
+    // a unique ID for each connection
+    private static int uniqueId;
     // an ArrayList to keep the list of the Client
     private ArrayList<ClientThread> players;
     // to display time
@@ -16,8 +17,6 @@ public class Server {
     private int port;
     // to check if server is running
     private boolean keepGoing;
-
-    private String message;
     // notification
     private String notification = " *** ";
 
@@ -41,7 +40,8 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(port);
 
             // infinite loop to wait for connections ( till server is active )
-            while(keepGoing) {
+            while(keepGoing)
+            {
                 display("Server waiting for Clients on port " + port + ".");
 
                 // accept connection if requested from client
@@ -100,24 +100,27 @@ public class Server {
     // to broadcast a message to all Clients
     private synchronized boolean broadcast(String message) {
         // add timestamp to the message
-        String time = simpleDateFormat.format(new Date()) , messageToSend = "";
+        String time = simpleDateFormat.format(new Date());
 
-        messageToSend = time + " | " + message + "\n";
-        System.out.print(messageToSend);
+        String messageLf = time + " | " + message + "\n";
+        // display message
+        System.out.print(messageLf);
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
         for(int i = players.size(); --i >= 0;) {
-            ClientThread clientThread = players.get(i);
+            ClientThread ct = players.get(i);
             // try to write to the Client if it fails remove it from the list
-            if(!clientThread.writeMsg(messageToSend)) {
+            if(!ct.writeMsg(messageLf)) {
                 players.remove(i);
-                display("Disconnected Client " + clientThread.username + " removed from list.");
+                display("Disconnected Client " + ct.username + " removed from list.");
             }
         }
 
-        return true;
-    }
+    return true;
+
+
+}
 
     // if client sent LOGOUT message to exit
     synchronized void remove(int id) {
@@ -178,13 +181,14 @@ public class Server {
         // the Username of the Client
         String username;
         // message object to recieve message and its type
+        ChatMessage cm;
         // timestamp
         String date;
-        ChatMessage chatMessage;
 
         // Constructor
         ClientThread(Socket socket) {
             // a unique id
+            id = ++uniqueId;
             this.socket = socket;
             //Creating both Data Stream
             System.out.println("Thread trying to create Object Input/Output Streams");
@@ -220,7 +224,7 @@ public class Server {
             while(keepGoing) {
                 // read a String (which is an object)
                 try {
-                    chatMessage = (ChatMessage) sInput.readObject();
+                    cm = (ChatMessage) sInput.readObject();
                 }
                 catch (IOException e) {
                     display(username + " Exception reading Streams: " + e);
@@ -230,10 +234,10 @@ public class Server {
                     break;
                 }
                 // get the message from the ChatMessage object received
-                String message = chatMessage.getMessage();
+                String message = cm.getMessage();
 
                 // different actions based on type message
-                switch(chatMessage.getType()) {
+                switch(cm.getType()) {
 
                     case ChatMessage.MESSAGE:
                         boolean confirmation =  broadcast(username + ": " + message);
@@ -297,3 +301,4 @@ public class Server {
         }
     }
 }
+
