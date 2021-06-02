@@ -2,6 +2,8 @@ package Client;
 
 
 
+import Server.ChatMessage;
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -91,9 +93,9 @@ public class Client  {
     /*
      * To send a message to the server
      */
-    void sendMessage(String string) {
+    void sendMessage(ChatMessage chatMessage) {
         try {
-            sOutput.writeObject(string);
+            sOutput.writeObject(chatMessage);
         }
         catch(IOException e) {
             display("Exception writing to server: " + e);
@@ -132,17 +134,16 @@ public class Client  {
      */
     public static void main(String[] args) {
         // default values if not entered
-        int portNumber = 1500;
+        int portNumber = 8888;
         String serverAddress = "localhost";
-        String userName = "Anonymous";
-        Scanner scan = new Scanner(System.in);
+        String userName ;
+        Scanner scanner = new Scanner(System.in);
 
         System.out.print("Enter the username: ");
-        userName = scan.nextLine();
-
+        userName = scanner.nextLine();
 
         System.out.print("Enter the port number: ");
-        portNumber = scan.nextInt();
+        portNumber = Integer.parseInt(scanner.nextLine());
 
         Client client = new Client(serverAddress, portNumber, userName);
         // try to connect to the server and return if not connected
@@ -153,16 +154,25 @@ public class Client  {
         while(true) {
             System.out.print("> ");
             // read message from user
-            String message = scan.nextLine();
+            String message = scanner.nextLine();
 
-            if(message.equals("logout"))
+            if(message.equalsIgnoreCase("LOGOUT")) {
+                client.sendMessage(new ChatMessage(ChatMessage.LOGOUT, ""));
                 break;
+            }
+            // message to check who are present in chatroom
+            else if(message.equalsIgnoreCase("WHOISIN")) {
+                client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
+            }
+            // regular text message
+            else {
+                client.sendMessage(new ChatMessage(ChatMessage.MESSAGE, message));
+            }
 
-            client.sendMessage(message);
         }
 
         // close resource
-        scan.close();
+        scanner.close();
         // client completed its job. disconnect client.
         client.disconnect();
     }
@@ -191,5 +201,3 @@ public class Client  {
         }
     }
 }
-
-

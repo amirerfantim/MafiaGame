@@ -180,6 +180,7 @@ public class Server {
         // message object to recieve message and its type
         // timestamp
         String date;
+        ChatMessage chatMessage;
 
         // Constructor
         ClientThread(Socket socket) {
@@ -219,7 +220,7 @@ public class Server {
             while(keepGoing) {
                 // read a String (which is an object)
                 try {
-                    message = (String) sInput.readObject();
+                    chatMessage = (ChatMessage) sInput.readObject();
                 }
                 catch (IOException e) {
                     display(username + " Exception reading Streams: " + e);
@@ -229,23 +230,31 @@ public class Server {
                     break;
                 }
                 // get the message from the ChatMessage object received
-                String message = Server.this.message;
+                String message = chatMessage.getMessage();
 
-                if(message == null){
-                    continue;
+                // different actions based on type message
+                switch(chatMessage.getType()) {
+
+                    case ChatMessage.MESSAGE:
+                        boolean confirmation =  broadcast(username + ": " + message);
+                        if(confirmation==false){
+                            String msg = notification + "Sorry. No such user exists." + notification;
+                            writeMsg(msg);
+                        }
+                        break;
+                    case ChatMessage.LOGOUT:
+                        display(username + " disconnected with a LOGOUT message.");
+                        keepGoing = false;
+                        break;
+                    case ChatMessage.WHOISIN:
+                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
+                        // send list of active clients
+                        for(int i = 0; i < players.size(); ++i) {
+                            ClientThread ct = players.get(i);
+                            writeMsg((i+1) + ") " + ct.username + " since " + ct.date);
+                        }
+                        break;
                 }
-
-                boolean confirmation =  broadcast(username + ": " + message);
-                if(!confirmation){
-                    String msg = notification + "Sorry. No such user exists." + notification;
-                    writeMsg(msg);
-                }
-
-                if(message.equals("logout")){
-                    keepGoing = false;
-                    break;
-                }
-
             }
             // if out of the loop then disconnected and remove from client list
             remove(id);
@@ -288,4 +297,3 @@ public class Server {
         }
     }
 }
-
