@@ -17,7 +17,7 @@ public class Server {
     private int port;
     // to check if server is running
     private boolean keepGoing;
-    private int maxCapacity = 10;
+    private int maxCapacity = 3;
     // notification
     private String notification = " *** ";
 
@@ -61,12 +61,13 @@ public class Server {
             broadcast("Server is full -> Let's go");
 
             GameManager gameManager = new GameManager(maxCapacity, clientThreads, this);
-            gameManager.createPlayers();
-            gameManager.giveRoles();
-
+            gameManager.game();
+            /*
             for (ClientThread clientThread : clientThreads) {
                 clientThread.start();
             }
+
+             */
 
             // try to stop the server
             if(!keepGoing) {
@@ -228,14 +229,34 @@ public class Server {
         }
 
         // infinite loop to read and forward message
-        public void run() {
-            // to loop until LOGOUT
+        public synchronized void run() {
 
             boolean keepGoing = true;
+            int dayTime = 60;
+            long start = System.currentTimeMillis();
+            long end = start + dayTime*1000;
+
             while (keepGoing) {
+
+
                 // read a String (which is an object)
                 try {
                     cm = (ChatMessage) sInput.readObject();
+
+                    if(System.currentTimeMillis() > end){
+                        synchronized (this){
+                            try {
+                                wait();
+                                start = System.currentTimeMillis();
+                                end = start + dayTime*1000;
+                                continue;
+                            } catch (InterruptedException e) {
+                                System.out.println("Error in waiting");
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
                 } catch (IOException e) {
                     server.display(username + " Exception reading Streams: " + e);
                     break;

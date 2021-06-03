@@ -79,12 +79,28 @@ public class GameManager {
 
     }
 
-    public void oneDay(){
+    public void firstDayChat() {
 
         for (Server.ClientThread clientThread : clientThreads) {
             clientThread.start();
         }
 
     }
+
+    public synchronized void oneDayChat(){
+
+        for (Server.ClientThread clientThread : clientThreads) {
+            synchronized (clientThread) {
+                clientThread.notify();
+            }
+        }
+    }
+
+    public void game(){
+        createPlayers();
+        giveRoles();
+        firstDayChat();
+    }
+
 
 }
