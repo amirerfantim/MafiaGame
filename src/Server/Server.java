@@ -10,13 +10,14 @@ public class Server {
     // a unique ID for each connection
     private static int uniqueId;
     // an ArrayList to keep the list of the Client
-    private ArrayList<ClientThread> players;
+    private ArrayList<ClientThread> clientThreads;
     // to display time
     private SimpleDateFormat simpleDateFormat;
     // the port number to listen for connection
     private int port;
     // to check if server is running
     private boolean keepGoing;
+    private int maxCapacity = 10;
     // notification
     private String notification = " *** ";
 
@@ -28,11 +29,12 @@ public class Server {
         // to display hh:mm:ss
         simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         // an ArrayList to keep the list of the Client
-        players = new ArrayList<ClientThread>();
+        clientThreads = new ArrayList<ClientThread>();
     }
 
     public void start() {
         keepGoing = true;
+
         //create socket server and wait for connection requests
         try
         {
@@ -40,8 +42,7 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(port);
 
             // infinite loop to wait for connections ( till server is active )
-            while(keepGoing)
-            {
+            for(int i = 0 ; i < maxCapacity; i++){
                 display("Server waiting for Clients on port " + port + ".");
 
                 // accept connection if requested from client
@@ -50,29 +51,39 @@ public class Server {
                 if(!keepGoing)
                     break;
                 // if client is connected, create its thread
-                ClientThread t = new ClientThread(socket);
+                ClientThread t = new ClientThread(this, socket);
                 //add this client to arraylist
-                players.add(t);
+                clientThreads.add(t);
 
-                t.start();
+                //t.start();
             }
+
+            broadcast("Server is full -> Let's go");
+
+            GameManager gameManager = new GameManager(maxCapacity, clientThreads, this);
+            gameManager.createPlayers();
+            gameManager.giveRoles();
+
+            for (ClientThread clientThread : clientThreads) {
+                clientThread.start();
+            }
+
             // try to stop the server
-            try {
-                serverSocket.close();
-                for(int i = 0; i < players.size(); ++i) {
-                    ClientThread tc = players.get(i);
-                    try {
-                        // close all data streams and socket
-                        tc.sInput.close();
-                        tc.sOutput.close();
-                        tc.socket.close();
+            if(!keepGoing) {
+                try {
+                    serverSocket.close();
+                    for (ClientThread tc : clientThreads) {
+                        try {
+                            // close all data streams and socket
+                            tc.sInput.close();
+                            tc.sOutput.close();
+                            tc.socket.close();
+                        } catch (IOException ioE) {
+                        }
                     }
-                    catch(IOException ioE) {
-                    }
+                } catch (Exception e) {
+                    display("Exception closing the server and clients: " + e);
                 }
-            }
-            catch(Exception e) {
-                display("Exception closing the server and clients: " + e);
             }
         }
         catch (IOException e) {
@@ -93,12 +104,12 @@ public class Server {
 
     // Display an event to the console
     private void display(String msg) {
-        String time = simpleDateFormat.format(new Date()) + " " + msg;
+        String time = simpleDateFormat.format(new Date()) + " | " + msg;
         System.out.println(time);
     }
 
     // to broadcast a message to all Clients
-    private synchronized boolean broadcast(String message) {
+    public synchronized boolean broadcast(String message) {
         // add timestamp to the message
         String time = simpleDateFormat.format(new Date());
 
@@ -108,11 +119,11 @@ public class Server {
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
-        for(int i = players.size(); --i >= 0;) {
-            ClientThread ct = players.get(i);
+        for(int i = clientThreads.size(); --i >= 0;) {
+            ClientThread ct = clientThreads.get(i);
             // try to write to the Client if it fails remove it from the list
             if(!ct.writeMsg(messageLf)) {
-                players.remove(i);
+                clientThreads.remove(i);
                 display("Disconnected Client " + ct.username + " removed from list.");
             }
         }
@@ -127,12 +138,12 @@ public class Server {
 
         String disconnectedClient = "";
         // scan the array list until we found the Id
-        for(int i = 0; i < players.size(); ++i) {
-            ClientThread ct = players.get(i);
+        for(int i = 0; i < clientThreads.size(); ++i) {
+            ClientThread ct = clientThreads.get(i);
             // if found remove it
             if(ct.id == id) {
                 disconnectedClient = ct.getUsername();
-                players.remove(i);
+                clientThreads.remove(i);
                 break;
             }
         }
@@ -147,7 +158,7 @@ public class Server {
      */
     public static void main(String[] args) {
         // start server on port 1500 unless a PortNumber is specified
-        int portNumber = 8888;
+        int portNumber = 8686;
         switch(args.length) {
             case 1:
                 try {
@@ -172,6 +183,7 @@ public class Server {
 
     // One instance of this thread will run for each client
     class ClientThread extends Thread {
+        private final Server server;
         // the socket to get messages from client
         Socket socket;
         ObjectInputStream sInput;
@@ -186,25 +198,23 @@ public class Server {
         String date;
 
         // Constructor
-        ClientThread(Socket socket) {
+        ClientThread(Server server, Socket socket) {
+            this.server = server;
             // a unique id
             id = ++uniqueId;
             this.socket = socket;
             //Creating both Data Stream
             System.out.println("Thread trying to create Object Input/Output Streams");
-            try
-            {
+            try {
                 sOutput = new ObjectOutputStream(socket.getOutputStream());
-                sInput  = new ObjectInputStream(socket.getInputStream());
+                sInput = new ObjectInputStream(socket.getInputStream());
                 // read the username
                 username = (String) sInput.readObject();
-                broadcast(notification + username + " has joined the chat room." + notification);
-            }
-            catch (IOException e) {
-                display("Exception creating new Input/output Streams: " + e);
+                server.broadcast(server.notification + username + " has joined the chat room." + server.notification);
+            } catch (IOException e) {
+                server.display("Exception creating new Input/output Streams: " + e);
                 return;
-            }
-            catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
             }
             date = new Date().toString() + "\n";
         }
@@ -220,71 +230,71 @@ public class Server {
         // infinite loop to read and forward message
         public void run() {
             // to loop until LOGOUT
+
             boolean keepGoing = true;
-            while(keepGoing) {
+            while (keepGoing) {
                 // read a String (which is an object)
                 try {
                     cm = (ChatMessage) sInput.readObject();
-                }
-                catch (IOException e) {
-                    display(username + " Exception reading Streams: " + e);
+                } catch (IOException e) {
+                    server.display(username + " Exception reading Streams: " + e);
                     break;
-                }
-                catch(ClassNotFoundException e2) {
+                } catch (ClassNotFoundException e2) {
                     break;
                 }
                 // get the message from the ChatMessage object received
                 String message = cm.getMessage();
 
                 // different actions based on type message
-                switch(cm.getType()) {
+                switch (cm.getType()) {
 
                     case ChatMessage.MESSAGE:
-                        boolean confirmation =  broadcast(username + ": " + message);
-                        if(confirmation==false){
-                            String msg = notification + "Sorry. No such user exists." + notification;
+                        boolean confirmation = server.broadcast(username + ": " + message);
+                        if (!confirmation) {
+                            String msg = server.notification + "Sorry. No such user exists." + server.notification;
                             writeMsg(msg);
                         }
                         break;
                     case ChatMessage.LOGOUT:
-                        display(username + " disconnected with a LOGOUT message.");
+                        server.display(username + " disconnected with a LOGOUT message.");
                         keepGoing = false;
                         break;
                     case ChatMessage.WHOISIN:
-                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
+                        writeMsg("List of the users connected at " + server.simpleDateFormat.format(new Date()) + "\n");
                         // send list of active clients
-                        for(int i = 0; i < players.size(); ++i) {
-                            ClientThread ct = players.get(i);
-                            writeMsg((i+1) + ") " + ct.username + " since " + ct.date);
+                        for (int i = 0; i < server.clientThreads.size(); ++i) {
+                            Server.ClientThread ct = server.clientThreads.get(i);
+                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                         }
                         break;
                 }
             }
             // if out of the loop then disconnected and remove from client list
-            remove(id);
+            server.remove(id);
             close();
         }
 
         // close everything
         private void close() {
             try {
-                if(sOutput != null) sOutput.close();
+                if (sOutput != null) sOutput.close();
+            } catch (Exception e) {
             }
-            catch(Exception e) {}
             try {
-                if(sInput != null) sInput.close();
+                if (sInput != null) sInput.close();
+            } catch (Exception e) {
             }
-            catch(Exception e) {};
+            ;
             try {
-                if(socket != null) socket.close();
+                if (socket != null) socket.close();
+            } catch (Exception e) {
             }
-            catch (Exception e) {}
         }
 
         // write a String to the Client output stream
         private boolean writeMsg(String msg) {
             // if Client is still connected send the message to it
-            if(!socket.isConnected()) {
+            if (!socket.isConnected()) {
                 close();
                 return false;
             }
@@ -293,9 +303,9 @@ public class Server {
                 sOutput.writeObject(msg);
             }
             // if an error occurs, do not abort just inform the user
-            catch(IOException e) {
-                display(notification + "Error sending message to " + username + notification);
-                display(e.toString());
+            catch (IOException e) {
+                server.display(server.notification + "Error sending message to " + username + server.notification);
+                server.display(e.toString());
             }
             return true;
         }

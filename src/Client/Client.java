@@ -50,7 +50,8 @@ public class Client  {
             return false;
         }
 
-        String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
+        String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort()
+                + "\n please wait until start...";
         display(msg);
 
         /* Creating both Data Stream */
