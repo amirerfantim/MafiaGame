@@ -11,6 +11,8 @@ public class GameManager {
     private ArrayList<Server.ClientThread> clientThreads = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
     private HashMap<Server.ClientThread, Player> connectClientToRole = new HashMap<>();
+    //private HashMap<Server.ClientThread, MafiaTeam> mafiaTeam = new HashMap<>();
+    //private HashMap<Server.ClientThread, CitizenTeam> citizenTeam = new HashMap<>();
     private Server server;
 
     public GameManager(int numberOfPlayers, ArrayList<Server.ClientThread> clientThreads, Server server) {
@@ -75,6 +77,18 @@ public class GameManager {
         for(Server.ClientThread clientThread : clientThreads){
             System.out.println(clientThread.getUsername() + " -> " + connectClientToRole.get(clientThread) );
         }
+/*
+        for(Server.ClientThread clientThread : clientThreads){
+            Player curPlayer = connectClientToRole.get(clientThread);
+            if(curPlayer instanceof MafiaTeam){
+                mafiaTeam.put(clientThread, (MafiaTeam) curPlayer);
+            }else{
+                citizenTeam.put(clientThread, (CitizenTeam) curPlayer);
+
+            }
+        }
+
+ */
 
 
     }
@@ -96,9 +110,64 @@ public class GameManager {
         }
     }
 
+    public void firstNight(){
+
+        for(Server.ClientThread clientThread : clientThreads){
+            Player curPlayer = connectClientToRole.get(clientThread);
+
+            if( curPlayer instanceof SimpleMafia){
+                server.sendMsgToClient("God : You are Simple Mafia", clientThread);
+                showMafiaTeam(clientThread);
+            }else if( curPlayer instanceof GodFather) {
+                server.sendMsgToClient("God : You are God Father", clientThread);
+                showMafiaTeam(clientThread);
+            }else if( curPlayer instanceof LecterDoctor){
+                server.sendMsgToClient("God : You are Lecter Doctor", clientThread);
+                showMafiaTeam(clientThread);
+            }else if( curPlayer instanceof SimpleCitizen){
+                server.sendMsgToClient("God : You are Simple citizen", clientThread);
+            }else if( curPlayer instanceof Doctor){
+                server.sendMsgToClient("God : You are Doctor", clientThread);
+            }else if( curPlayer instanceof Detective){
+                server.sendMsgToClient("God : You are Detective", clientThread);
+            }else if( curPlayer instanceof Invulnerable){
+                server.sendMsgToClient("God : You are Invulnerable", clientThread);
+            }else if( curPlayer instanceof Mayor){
+                server.sendMsgToClient("God : You are Mayor", clientThread);
+            }else if( curPlayer instanceof Professional){
+                server.sendMsgToClient("God : You are Professional", clientThread);
+            }else if( curPlayer instanceof Psychologist){
+                server.sendMsgToClient("God : You are Psychologist", clientThread);
+            }
+
+
+            }
+
+    }
+
+    public void showMafiaTeam(Server.ClientThread ctToSend){
+        int row = 1;
+
+        server.sendMsgToClient("The Mafia Team is: ", ctToSend);
+
+        for(Server.ClientThread clientThread : clientThreads){
+            if(connectClientToRole.get(clientThread) instanceof MafiaTeam) {
+                server.sendMsgToClient(row + ": " + clientThread.getUsername()
+                        + " -> " + connectClientToRole.get(clientThread), ctToSend);
+                row++;
+            }
+        }
+    }
+
     public void game(){
         createPlayers();
         giveRoles();
+        firstNight();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         firstDayChat();
     }
 

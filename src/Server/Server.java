@@ -17,7 +17,7 @@ public class Server {
     private int port;
     // to check if server is running
     private boolean keepGoing;
-    private int maxCapacity = 3;
+    private int maxCapacity = 6;
     // notification
     private String notification = " *** ";
 
@@ -131,8 +131,22 @@ public class Server {
 
     return true;
 
-
 }
+
+    public synchronized boolean sendMsgToClient(String message, ClientThread clientThread){
+        String time = simpleDateFormat.format(new Date());
+        String messageLf = time + " | " + message + "\n";
+        System.out.print(messageLf);
+
+            if(!clientThread.writeMsg(messageLf)) {
+                clientThreads.remove(clientThread);
+                display("Disconnected Client " + clientThread.username + " removed from list.");
+        }
+
+        return true;
+
+
+    }
 
     // if client sent LOGOUT message to exit
     synchronized void remove(int id) {
@@ -337,7 +351,7 @@ public class Server {
         }
 
         // write a String to the Client output stream
-        private boolean writeMsg(String msg) {
+        public boolean writeMsg(String msg) {
             // if Client is still connected send the message to it
             if (!socket.isConnected()) {
                 close();
