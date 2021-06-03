@@ -207,10 +207,34 @@ public class Server {
             //Creating both Data Stream
             System.out.println("Thread trying to create Object Input/Output Streams");
             try {
+
                 sOutput = new ObjectOutputStream(socket.getOutputStream());
                 sInput = new ObjectInputStream(socket.getInputStream());
                 // read the username
                 username = (String) sInput.readObject();
+
+                for(ClientThread clientThread : clientThreads){
+                    if(username.equals(clientThread.getUsername())){
+                        StringBuilder stringBuilder = new StringBuilder();
+                        stringBuilder.append(username);
+                        stringBuilder.append(uniqueId);
+                        username = stringBuilder.toString();
+                    }
+                }
+
+                /*
+                for(int i = 0 ; i < clientThreads.size() ; i++){
+                    if(username.equals(clientThreads.get(i).getUsername())){
+                        writeMsg("choose another username: ");
+                        cm =(ChatMessage) sInput.readObject();
+                        username = cm.getMessage();
+                        i = 0;
+                    }
+                }
+
+                 */
+
+
                 server.broadcast(server.notification + username + " has joined the chat room." + server.notification);
             } catch (IOException e) {
                 server.display("Exception creating new Input/output Streams: " + e);

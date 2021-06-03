@@ -13,7 +13,7 @@ import java.util.*;
 public class Client  {
 
     // notification
-    private String notif = " *** ";
+    private String notification = " *** ";
 
     // for I/O
     private ObjectInputStream sInput;		// to read from the socket
@@ -72,6 +72,7 @@ public class Client  {
         try
         {
             sOutput.writeObject(username);
+
         }
         catch (IOException eIO) {
             display("Exception doing login : " + eIO);
@@ -190,10 +191,20 @@ public class Client  {
                     String message = (String) sInput.readObject();
                     // print the message
                     System.out.println(message);
+                    /*
+                    if(message.equals("choose another username: ")) {
+                        Scanner scanner = new Scanner(System.in);
+                        username = scanner.nextLine();
+                        ChatMessage chatMessage = new ChatMessage(ChatMessage.MESSAGE, username );
+                        sendMessage(chatMessage);
+                    }
+
+                     */
+
                     System.out.print("> ");
                 }
                 catch(IOException e) {
-                    display(notif + "Server has closed the connection: " + e + notif);
+                    display(notification + "Server has closed the connection: " + e + notification);
                     break;
                 }
                 catch(ClassNotFoundException e2) {
