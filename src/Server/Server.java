@@ -21,6 +21,8 @@ public class Server {
     // notification
     private String notification = " *** ";
     private final GameManager gameManager;
+    private boolean waitingToGo = false;
+
 
 
     //constructor that receive the port to listen to for connection as parameter
@@ -33,6 +35,14 @@ public class Server {
         // an ArrayList to keep the list of the Client
         clientThreads = new ArrayList<ClientThread>();
         gameManager = new GameManager(maxCapacity, clientThreads, this);
+    }
+
+    public int getMaxCapacity() {
+        return maxCapacity;
+    }
+
+    public void setWaitingToGo(boolean waitingToGo) {
+        this.waitingToGo = waitingToGo;
     }
 
     public void start() {
@@ -266,6 +276,7 @@ public class Server {
             this.username = username;
         }
 
+
         public synchronized void run() {
 
             boolean keepGoing = true;
@@ -277,20 +288,19 @@ public class Server {
 
             long end = start + dayTime*1000;
 
+
+
             while (keepGoing) {
 
                 try {
                     chatMessage = (ChatMessage) sInput.readObject();
 
-                    if(System.currentTimeMillis() > end) {
+                    if (System.currentTimeMillis() > end) {
                         synchronized (this) {
                             try {
-                                //isDay = false;
-                                broadcast("Yo");
-
                                 wait();
                                 start = System.currentTimeMillis();
-                                end = start + dayTime*1000;
+                                end = start + dayTime * 1000;
 
                             } catch (InterruptedException e) {
                                 System.out.println("Error in waiting");
@@ -308,32 +318,46 @@ public class Server {
 
                 String message = chatMessage.getMessage();
 
+                    if(!waitingToGo) {
+                        switch (chatMessage.getType()) {
 
-                switch (chatMessage.getType()) {
+                            case ChatMessage.MESSAGE: {
+                                boolean confirmation = true;
+                                confirmation = broadcast(username + ": " + message);
 
-                    case ChatMessage.MESSAGE:
-                        boolean confirmation = true;
-                        confirmation = broadcast(username + ": " + message);
-
-                        if (!confirmation) {
-                            String msg = notification + "Sorry. No such user exists." + notification;
-                            writeMsg(msg);
+                                if (!confirmation) {
+                                    String msg = notification + "Sorry. No such user exists." + notification;
+                                    writeMsg(msg);
+                                }
+                                break;
+                            }
+                            case ChatMessage.LOGOUT: {
+                                display(username + " disconnected with a LOGOUT message.");
+                                keepGoing = false;
+                                break;
+                            }
+                            case ChatMessage.WHOISIN: {
+                                writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
+                                // send list of active clients
+                                for (int i = 0; i < clientThreads.size(); ++i) {
+                                    Server.ClientThread ct = clientThreads.get(i);
+                                    writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
+                                }
+                                break;
+                            }
                         }
-                        break;
-                    case ChatMessage.LOGOUT:
-                        display(username + " disconnected with a LOGOUT message.");
-                        keepGoing = false;
-                        break;
-                    case ChatMessage.WHOISIN:
-                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
-                        // send list of active clients
-                        for (int i = 0; i < clientThreads.size(); ++i) {
-                            Server.ClientThread ct = clientThreads.get(i);
-                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
+                    }else{
+                        if(ChatMessage.READY == chatMessage.getType()){
+                            boolean continueThis = gameManager.ready();
+                            writeMsg( gameManager.getReadyToGo() +" number of players are ready so far");
+                            if(continueThis){
+                                waitingToGo = false;
+                            }
                         }
-                        break;
-                }
+                    }
+
             }
+
             // if out of the loop then disconnected and remove from client list
             remove(id);
             close();
@@ -375,6 +399,7 @@ public class Server {
             return true;
         }
     }
+
 
 }
 

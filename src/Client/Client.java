@@ -166,6 +166,9 @@ public class Client  {
             else if(message.equalsIgnoreCase("WHOISIN")) {
                 client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
             }
+            else if(message.equalsIgnoreCase("READY")){
+                client.sendMessage(new ChatMessage(ChatMessage.READY, ""));
+            }
             // regular text message
             else {
                 client.sendMessage(new ChatMessage(ChatMessage.MESSAGE, message));
