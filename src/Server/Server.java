@@ -10,16 +10,18 @@ public class Server {
     // a unique ID for each connection
     private static int uniqueId;
     // an ArrayList to keep the list of the Client
-    private ArrayList<ClientThread> clientThreads;
+    protected ArrayList<ClientThread> clientThreads;
     // to display time
     private SimpleDateFormat simpleDateFormat;
     // the port number to listen for connection
     private int port;
     // to check if server is running
     private boolean keepGoing;
-    private int maxCapacity = 6;
+    private int maxCapacity = 3;
     // notification
     private String notification = " *** ";
+    private final GameManager gameManager;
+
 
     //constructor that receive the port to listen to for connection as parameter
 
@@ -30,6 +32,7 @@ public class Server {
         simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         // an ArrayList to keep the list of the Client
         clientThreads = new ArrayList<ClientThread>();
+        gameManager = new GameManager(maxCapacity, clientThreads, this);
     }
 
     public void start() {
@@ -60,13 +63,11 @@ public class Server {
 
             broadcast("Server is full -> Let's go");
 
-            GameManager gameManager = new GameManager(maxCapacity, clientThreads, this);
             gameManager.game();
             /*
             for (ClientThread clientThread : clientThreads) {
                 clientThread.start();
             }
-
              */
 
             // try to stop the server
@@ -129,18 +130,18 @@ public class Server {
             }
         }
 
-    return true;
+        return true;
 
-}
+    }
 
     public synchronized boolean sendMsgToClient(String message, ClientThread clientThread){
         String time = simpleDateFormat.format(new Date());
         String messageLf = time + " | " + message + "\n";
         System.out.print(messageLf);
 
-            if(!clientThread.writeMsg(messageLf)) {
-                clientThreads.remove(clientThread);
-                display("Disconnected Client " + clientThread.username + " removed from list.");
+        if(!clientThread.writeMsg(messageLf)) {
+            clientThreads.remove(clientThread);
+            display("Disconnected Client " + clientThread.username + " removed from list.");
         }
 
         return true;
@@ -208,7 +209,7 @@ public class Server {
         // the Username of the Client
         String username;
         // message object to recieve message and its type
-        ChatMessage cm;
+        ChatMessage chatMessage;
         // timestamp
         String date;
 
@@ -245,11 +246,10 @@ public class Server {
                         i = 0;
                     }
                 }
-
                  */
 
 
-                server.broadcast(server.notification + username + " has joined the chat room." + server.notification);
+                server.broadcast(notification + username + " has joined the chat room." + notification);
             } catch (IOException e) {
                 server.display("Exception creating new Input/output Streams: " + e);
                 return;
@@ -266,28 +266,32 @@ public class Server {
             this.username = username;
         }
 
-        // infinite loop to read and forward message
         public synchronized void run() {
 
             boolean keepGoing = true;
-            int dayTime = 60;
+
+            int dayTime = 15;
+            int nightTime = 15;
+
             long start = System.currentTimeMillis();
+
             long end = start + dayTime*1000;
 
             while (keepGoing) {
 
-
-                // read a String (which is an object)
                 try {
-                    cm = (ChatMessage) sInput.readObject();
+                    chatMessage = (ChatMessage) sInput.readObject();
 
-                    if(System.currentTimeMillis() > end){
-                        synchronized (this){
+                    if(System.currentTimeMillis() > end) {
+                        synchronized (this) {
                             try {
+                                //isDay = false;
+                                broadcast("Yo");
+
                                 wait();
                                 start = System.currentTimeMillis();
                                 end = start + dayTime*1000;
-                                continue;
+
                             } catch (InterruptedException e) {
                                 System.out.println("Error in waiting");
                                 e.printStackTrace();
@@ -296,40 +300,42 @@ public class Server {
                     }
 
                 } catch (IOException e) {
-                    server.display(username + " Exception reading Streams: " + e);
+                    display(username + " Exception reading Streams: " + e);
                     break;
                 } catch (ClassNotFoundException e2) {
                     break;
                 }
-                // get the message from the ChatMessage object received
-                String message = cm.getMessage();
 
-                // different actions based on type message
-                switch (cm.getType()) {
+                String message = chatMessage.getMessage();
+
+
+                switch (chatMessage.getType()) {
 
                     case ChatMessage.MESSAGE:
-                        boolean confirmation = server.broadcast(username + ": " + message);
+                        boolean confirmation = true;
+                        confirmation = broadcast(username + ": " + message);
+
                         if (!confirmation) {
-                            String msg = server.notification + "Sorry. No such user exists." + server.notification;
+                            String msg = notification + "Sorry. No such user exists." + notification;
                             writeMsg(msg);
                         }
                         break;
                     case ChatMessage.LOGOUT:
-                        server.display(username + " disconnected with a LOGOUT message.");
+                        display(username + " disconnected with a LOGOUT message.");
                         keepGoing = false;
                         break;
                     case ChatMessage.WHOISIN:
-                        writeMsg("List of the users connected at " + server.simpleDateFormat.format(new Date()) + "\n");
+                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
                         // send list of active clients
-                        for (int i = 0; i < server.clientThreads.size(); ++i) {
-                            Server.ClientThread ct = server.clientThreads.get(i);
+                        for (int i = 0; i < clientThreads.size(); ++i) {
+                            Server.ClientThread ct = clientThreads.get(i);
                             writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                         }
                         break;
                 }
             }
             // if out of the loop then disconnected and remove from client list
-            server.remove(id);
+            remove(id);
             close();
         }
 
@@ -363,11 +369,13 @@ public class Server {
             }
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {
-                server.display(server.notification + "Error sending message to " + username + server.notification);
-                server.display(e.toString());
+                display(notification + "Error sending message to " + username + notification);
+                display(e.toString());
             }
             return true;
         }
     }
+
 }
+
 

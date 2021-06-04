@@ -8,7 +8,7 @@ import java.util.HashMap;
 public class GameManager {
 
     private int numberOfPlayers, numberOfMafias, numberOfCitizens;
-    private ArrayList<Server.ClientThread> clientThreads = new ArrayList<>();
+    private ArrayList<Server.ClientThread> clientThreads ;
     private ArrayList<Player> players = new ArrayList<>();
     private HashMap<Server.ClientThread, Player> connectClientToRole = new HashMap<>();
     //private HashMap<Server.ClientThread, MafiaTeam> mafiaTeam = new HashMap<>();
@@ -71,8 +71,8 @@ public class GameManager {
         int i = 0;
 
         for(Server.ClientThread clientThread : clientThreads){
-                connectClientToRole.put(clientThread, players.get(i));
-                i++;
+            connectClientToRole.put(clientThread, players.get(i));
+            i++;
         }
         for(Server.ClientThread clientThread : clientThreads){
             System.out.println(clientThread.getUsername() + " -> " + connectClientToRole.get(clientThread) );
@@ -84,10 +84,8 @@ public class GameManager {
                 mafiaTeam.put(clientThread, (MafiaTeam) curPlayer);
             }else{
                 citizenTeam.put(clientThread, (CitizenTeam) curPlayer);
-
             }
         }
-
  */
 
 
@@ -99,15 +97,6 @@ public class GameManager {
             clientThread.start();
         }
 
-    }
-
-    public synchronized void oneDayChat(){
-
-        for (Server.ClientThread clientThread : clientThreads) {
-            synchronized (clientThread) {
-                clientThread.notify();
-            }
-        }
     }
 
     public void firstNight(){
@@ -141,7 +130,7 @@ public class GameManager {
             }
 
 
-            }
+        }
 
     }
 
@@ -159,16 +148,40 @@ public class GameManager {
         }
     }
 
-    public void game(){
+    public Player getPlayer(Server.ClientThread clientThread){
+       return connectClientToRole.get(clientThread);
+    }
+
+    public void sleep(int seconds){
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            System.out.println("error during sleep");
+            e.printStackTrace();
+        }
+    }
+
+    public synchronized void notifyAllClients(){
+        notifyAll();
+
+        for (Server.ClientThread clientThread : server.clientThreads) {
+            synchronized (clientThread) {
+                clientThread.notify();
+            }
+        }
+    }
+
+    public synchronized void game(){
         createPlayers();
         giveRoles();
         firstNight();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         firstDayChat();
+
+        sleep(30);
+
+        server.broadcast("God: End of day \nnight begins...");
+        notifyAllClients();
+
     }
 
 
