@@ -246,23 +246,27 @@ public class GameManager {
         }
 
         server.broadcast("God: chat for 25 seconds!", server.getClientThreads());
-        sleep(25);
+        sleep(20);
         waitAllClients();
-        System.out.println(45855);
-        /*
+        server.broadcast("God: Day ends" , server.getClientThreads());
+        sleep(5);
+        server.broadcast("God: Day begins" , server.getClientThreads());
+
         notifyAllClients();
         sleep(15);
         waitAllClients();
 
-         */
 
 
+/*
         sleep(5);
         server.broadcast("God: Day ends & night begins" , server.getClientThreads());
         server.setActiveClients(mafiaClients);
         wakeMafiaUp();
         sleep(20);
         waitAllClients();
+
+ */
 
 
 

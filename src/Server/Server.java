@@ -308,11 +308,14 @@ public class Server {
                     e.printStackTrace();
                 }
 
+                int count = 0;
+
                 try {
-                    if (sInput.available() > 0) {
+
+                    count = sInput.available();
+
+                    if (count > 0) {
                         message = sInput.readUTF();
-                    }else{
-                        continue;
                     }
 
                     if (isWait) {
@@ -330,6 +333,10 @@ public class Server {
                 } catch (IOException e) {
                     display(username + " Exception reading Streams: " + e);
                     break;
+                }
+
+                if(count == 0){
+                    continue;
                 }
 
 
