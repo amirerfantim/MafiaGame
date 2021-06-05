@@ -224,14 +224,14 @@ public class Server {
         private final Server server;
         // the socket to get messages from client
         Socket socket;
-        ObjectInputStream sInput;
-        ObjectOutputStream sOutput;
+        DataInputStream sInput;
+        DataOutputStream sOutput;
         // my unique id (easier for deconnection)
         int id;
         // the Username of the Client
         String username;
         // message object to recieve message and its type
-        ChatMessage chatMessage;
+        String message;
         // timestamp
         String date;
         private boolean isWait = false;
@@ -246,10 +246,10 @@ public class Server {
             System.out.println("Thread trying to create Object Input/Output Streams");
             try {
 
-                sOutput = new ObjectOutputStream(socket.getOutputStream());
-                sInput = new ObjectInputStream(socket.getInputStream());
+                sOutput = new DataOutputStream(socket.getOutputStream());
+                sInput = new DataInputStream(socket.getInputStream());
                 // read the username
-                username = (String) sInput.readObject();
+                username = (String) sInput.readUTF();
 
                 for(ClientThread clientThread : clientThreads){
                     if(username.equals(clientThread.getUsername())){
@@ -276,7 +276,6 @@ public class Server {
             } catch (IOException e) {
                 server.display("Exception creating new Input/output Streams: " + e);
                 return;
-            } catch (ClassNotFoundException e) {
             }
             date = new Date().toString() + "\n";
         }
@@ -304,8 +303,14 @@ public class Server {
             while (keepGoing) {
 
                 try {
-                    if(sInput.available() > 0) {
-                        chatMessage = (ChatMessage) sInput.readObject();
+                    sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    if (sInput.available() > 0) {
+                        message = sInput.readUTF();
                     }else{
                         continue;
                     }
@@ -325,48 +330,36 @@ public class Server {
                 } catch (IOException e) {
                     display(username + " Exception reading Streams: " + e);
                     break;
-                } catch (ClassNotFoundException e2) {
-                    break;
                 }
 
-                isWait = false;
 
-                String message = chatMessage.getMessage();
+                if (!waitingToGo) {
 
-                    if(!waitingToGo) {
-                        switch (chatMessage.getType()) {
-
-                            case ChatMessage.MESSAGE: {
-
-                                boolean confirmation = broadcast(username + ": " + message, activeClients);
-
-                                if (!confirmation) {
-                                    String msg = notification + "Sorry. No such user exists." + notification;
-                                    writeMsg(msg);
-                                }
-                                break;
-                            }
-                            case ChatMessage.LOGOUT: {
-                                display(username + " disconnected with a LOGOUT message.");
-                                keepGoing = false;
-                                break;
-                            }
-                            case ChatMessage.WHOISIN: {
-                                writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
-                                // send list of active clients
-                                for (int i = 0; i < clientThreads.size(); ++i) {
-                                    Server.ClientThread ct = clientThreads.get(i);
-                                    writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
-                                }
-                                break;
-                            }
+                    if(message.equalsIgnoreCase("!LOGOUT")){
+                        display(username + " disconnected with a LOGOUT message.");
+                        keepGoing = false;
+                    }else if(message.equalsIgnoreCase("!WHOISIN")){
+                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
+                        // send list of active clients
+                        for (int i = 0; i < clientThreads.size(); ++i) {
+                            Server.ClientThread ct = clientThreads.get(i);
+                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                         }
                     }else{
-                        if(ChatMessage.READY == chatMessage.getType()){
-                            gameManager.ready();
-                            writeMsg( gameManager.getReadyToGo() +" number of players are ready so far");
+                        boolean confirmation = broadcast(username + ": " + message, activeClients);
+
+                        if (!confirmation) {
+                            String msg = notification + "Sorry. No such user exists." + notification;
+                            writeMsg(msg);
                         }
                     }
+
+                } else {
+                    if (message.equalsIgnoreCase("!READY")) {
+                        gameManager.ready();
+                        writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                    }
+                }
 
             }
 
@@ -401,7 +394,7 @@ public class Server {
             }
             // write the message to the stream
             try {
-                sOutput.writeObject(msg);
+                sOutput.writeUTF(msg);
             }
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {

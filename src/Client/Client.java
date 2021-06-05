@@ -16,8 +16,8 @@ public class Client  {
     private String notification = " *** ";
 
     // for I/O
-    private ObjectInputStream sInput;		// to read from the socket
-    private ObjectOutputStream sOutput;		// to write on the socket
+    private DataInputStream sInput;		// to read from the socket
+    private DataOutputStream sOutput;		// to write on the socket
     private Socket socket;					// socket object
 
     private String server, username;	// server and username
@@ -57,8 +57,8 @@ public class Client  {
         /* Creating both Data Stream */
         try
         {
-            sInput  = new ObjectInputStream(socket.getInputStream());
-            sOutput = new ObjectOutputStream(socket.getOutputStream());
+            sInput  = new DataInputStream(socket.getInputStream());
+            sOutput = new DataOutputStream(socket.getOutputStream());
         }
         catch (IOException eIO) {
             display("Exception creating new Input/output Streams: " + eIO);
@@ -71,7 +71,7 @@ public class Client  {
         // will send as a String. All other messages will be ChatMessage objects
         try
         {
-            sOutput.writeObject(username);
+            sOutput.writeUTF(username);
 
         }
         catch (IOException eIO) {
@@ -95,9 +95,9 @@ public class Client  {
     /*
      * To send a message to the server
      */
-    void sendMessage(ChatMessage chatMessage) {
+    void sendMessage(String message) {
         try {
-            sOutput.writeObject(chatMessage);
+            sOutput.writeUTF(message);
         }
         catch(IOException e) {
             display("Exception writing to server: " + e);
@@ -158,21 +158,10 @@ public class Client  {
             // read message from user
             String message = scanner.nextLine();
 
+            client.sendMessage(message);
 
-            if(message.equalsIgnoreCase("!LOGOUT")) {
-                client.sendMessage(new ChatMessage(ChatMessage.LOGOUT, ""));
+            if(message.equalsIgnoreCase("!LOGOUT")){
                 break;
-            }
-            // message to check who are present in chatroom
-            else if(message.equalsIgnoreCase("!WHOISIN")) {
-                client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
-            }
-            else if(message.equalsIgnoreCase("!READY") || message.equalsIgnoreCase("!GO")){
-                client.sendMessage(new ChatMessage(ChatMessage.READY, ""));
-            }
-            // regular text message
-            else {
-                client.sendMessage(new ChatMessage(ChatMessage.MESSAGE, message));
             }
 
         }
@@ -192,7 +181,7 @@ public class Client  {
             while(true) {
                 try {
                     // read the message form the input datastream
-                    String message = (String) sInput.readObject();
+                    String message = (String) sInput.readUTF();
                     // print the message
                     System.out.println(message);
                     /*
@@ -210,8 +199,6 @@ public class Client  {
                 catch(IOException e) {
                     display(notification + "Server has closed the connection: " + e + notification);
                     break;
-                }
-                catch(ClassNotFoundException e2) {
                 }
             }
         }
