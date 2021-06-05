@@ -174,6 +174,12 @@ public class GameManager {
         }
     }
 
+    public synchronized void waitAllClients() {
+        for (Server.ClientThread clientThread : server.clientThreads) {
+                clientThread.setWait(true);
+        }
+    }
+
     public boolean ready() {
         readyToGo++;
         return readyToGo == server.getMaxCapacity();
@@ -186,16 +192,21 @@ public class GameManager {
         firstNight();
 
         sleep(5);
-        server.broadcast("say [ready] to continue");
+        server.broadcast("God: say [ready] to continue");
         server.setWaitingToGo(true);
         firstDayChat();
+
         while(true){
             sleep(1);
             if (readyToGo == server.getMaxCapacity()) {
-                server.broadcast("Lets go!");
+                readyToGo = 0;
                 break;
             }
         }
+
+        server.broadcast("God: chat for 25 seconds!");
+        sleep(25);
+        waitAllClients();
 
 
     }

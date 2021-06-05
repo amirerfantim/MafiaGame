@@ -222,6 +222,7 @@ public class Server {
         ChatMessage chatMessage;
         // timestamp
         String date;
+        private boolean isWait = false;
 
         // Constructor
         ClientThread(Server server, Socket socket) {
@@ -268,39 +269,36 @@ public class Server {
             date = new Date().toString() + "\n";
         }
 
+        public boolean isWait() {
+            return isWait;
+        }
+
         public String getUsername() {
             return username;
+        }
+
+        public void setWait(boolean wait) {
+            isWait = wait;
         }
 
         public void setUsername(String username) {
             this.username = username;
         }
 
-
         public synchronized void run() {
 
             boolean keepGoing = true;
-
-            int dayTime = 15;
-            int nightTime = 15;
-
-            long start = System.currentTimeMillis();
-
-            long end = start + dayTime*1000;
-
-
 
             while (keepGoing) {
 
                 try {
                     chatMessage = (ChatMessage) sInput.readObject();
 
-                    if (System.currentTimeMillis() > end) {
+                    if (isWait) {
                         synchronized (this) {
                             try {
                                 wait();
-                                start = System.currentTimeMillis();
-                                end = start + dayTime * 1000;
+                                isWait = false;
 
                             } catch (InterruptedException e) {
                                 System.out.println("Error in waiting");
