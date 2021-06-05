@@ -14,14 +14,16 @@ public class Server {
     // to display time
     private SimpleDateFormat simpleDateFormat;
     // the port number to listen for connection
-    private int port;
+    private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private int maxCapacity = 3;
+    private final int maxCapacity = 6;
     // notification
-    private String notification = " *** ";
+    private final String notification = " *** ";
     private final GameManager gameManager;
     private boolean waitingToGo = false;
+    private ArrayList<ClientThread> activeClients;
+
 
 
 
@@ -39,6 +41,15 @@ public class Server {
 
     public int getMaxCapacity() {
         return maxCapacity;
+    }
+
+    public ArrayList<ClientThread> getClientThreads() {
+        return clientThreads;
+    }
+
+
+    public void setActiveClients(ArrayList<ClientThread> activeClients) {
+        this.activeClients = activeClients;
     }
 
     public void setWaitingToGo(boolean waitingToGo) {
@@ -60,7 +71,7 @@ public class Server {
 
                 // accept connection if requested from client
                 Socket socket = serverSocket.accept();
-                // break if server stoped
+                // break if server stopped
                 if(!keepGoing)
                     break;
                 // if client is connected, create its thread
@@ -71,7 +82,7 @@ public class Server {
                 //t.start();
             }
 
-            broadcast("Server is full -> Let's go");
+            broadcast("Server is full -> Let's go", getClientThreads());
 
             gameManager.game();
             /*
@@ -90,7 +101,8 @@ public class Server {
                             tc.sInput.close();
                             tc.sOutput.close();
                             tc.socket.close();
-                        } catch (IOException ioE) {
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
                 } catch (Exception e) {
@@ -121,7 +133,7 @@ public class Server {
     }
 
     // to broadcast a message to all Clients
-    public synchronized boolean broadcast(String message) {
+    public synchronized boolean broadcast(String message, ArrayList<ClientThread> toSendMsg) {
         // add timestamp to the message
         String time = simpleDateFormat.format(new Date());
 
@@ -131,11 +143,11 @@ public class Server {
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
-        for(int i = clientThreads.size(); --i >= 0;) {
-            ClientThread ct = clientThreads.get(i);
+        for(int i = toSendMsg.size(); --i >= 0;) {
+            ClientThread ct = toSendMsg.get(i);
             // try to write to the Client if it fails remove it from the list
             if(!ct.writeMsg(messageLf)) {
-                clientThreads.remove(i);
+                clientThreads.remove(ct);
                 display("Disconnected Client " + ct.username + " removed from list.");
             }
         }
@@ -173,7 +185,7 @@ public class Server {
                 break;
             }
         }
-        broadcast(notification + disconnectedClient + " has left the chat room." + notification);
+        broadcast(notification + disconnectedClient + " has left the chat room." + notification, getClientThreads());
     }
 
     /*
@@ -260,7 +272,7 @@ public class Server {
                  */
 
 
-                server.broadcast(notification + username + " has joined the chat room." + notification);
+                server.broadcast(notification + username + " has joined the chat room." + notification, getClientThreads());
             } catch (IOException e) {
                 server.display("Exception creating new Input/output Streams: " + e);
                 return;
@@ -292,13 +304,16 @@ public class Server {
             while (keepGoing) {
 
                 try {
-                    chatMessage = (ChatMessage) sInput.readObject();
+                    if(sInput.available() > 0) {
+                        chatMessage = (ChatMessage) sInput.readObject();
+                    }else{
+                        continue;
+                    }
 
                     if (isWait) {
                         synchronized (this) {
                             try {
                                 wait();
-                                isWait = false;
 
                             } catch (InterruptedException e) {
                                 System.out.println("Error in waiting");
@@ -314,14 +329,16 @@ public class Server {
                     break;
                 }
 
+                isWait = false;
+
                 String message = chatMessage.getMessage();
 
                     if(!waitingToGo) {
                         switch (chatMessage.getType()) {
 
                             case ChatMessage.MESSAGE: {
-                                boolean confirmation = true;
-                                confirmation = broadcast(username + ": " + message);
+
+                                boolean confirmation = broadcast(username + ": " + message, activeClients);
 
                                 if (!confirmation) {
                                     String msg = notification + "Sorry. No such user exists." + notification;
@@ -346,11 +363,8 @@ public class Server {
                         }
                     }else{
                         if(ChatMessage.READY == chatMessage.getType()){
-                            boolean continueThis = gameManager.ready();
+                            gameManager.ready();
                             writeMsg( gameManager.getReadyToGo() +" number of players are ready so far");
-                            if(continueThis){
-                                waitingToGo = false;
-                            }
                         }
                     }
 

@@ -2,19 +2,20 @@ package Server;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 
 public class GameManager {
 
     private int numberOfPlayers, numberOfMafias, numberOfCitizens;
     private ArrayList<Server.ClientThread> clientThreads;
+    private ArrayList<Server.ClientThread> mafiaClients = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
     private HashMap<Server.ClientThread, Player> connectClientToRole = new HashMap<>();
     //private HashMap<Server.ClientThread, MafiaTeam> mafiaTeam = new HashMap<>();
     //private HashMap<Server.ClientThread, CitizenTeam> citizenTeam = new HashMap<>();
     private Server server;
     private int readyToGo = 0;
+    private int targetToGo = 0;
 
     public GameManager(int numberOfPlayers, ArrayList<Server.ClientThread> clientThreads, Server server) {
         this.numberOfPlayers = numberOfPlayers;
@@ -91,8 +92,13 @@ public class GameManager {
                 citizenTeam.put(clientThread, (CitizenTeam) curPlayer);
             }
         }
- */
 
+ */
+        for(Server.ClientThread clientThread : server.clientThreads){
+            if(connectClientToRole.get(clientThread) instanceof MafiaTeam){
+                mafiaClients.add(clientThread);
+            }
+        }
 
     }
 
@@ -169,6 +175,7 @@ public class GameManager {
     public synchronized void notifyAllClients() {
         for (Server.ClientThread clientThread : server.clientThreads) {
             synchronized (clientThread) {
+                clientThread.setWait(false);
                 clientThread.notify();
             }
         }
@@ -176,23 +183,31 @@ public class GameManager {
 
     public synchronized void waitAllClients() {
         for (Server.ClientThread clientThread : server.clientThreads) {
-                clientThread.setWait(true);
+            clientThread.setWait(true);
         }
     }
 
-    public boolean ready() {
-        readyToGo++;
-        return readyToGo == server.getMaxCapacity();
+    public synchronized void wakeMafiaUp() {
+        for (Server.ClientThread clientThread : server.clientThreads) {
+            if(connectClientToRole.get(clientThread) instanceof MafiaTeam){
+                synchronized (clientThread){
+                    clientThread.setWait(false);
+                    clientThread.notify();
+                }
+            }
+        }
     }
 
 
-    public synchronized void game() {
-        createPlayers();
-        giveRoles();
-        firstNight();
+    public boolean ready() {
+        readyToGo++;
+        return readyToGo == targetToGo;
+    }
 
-        sleep(5);
+    /*
+    public void getReady(int target){
         server.broadcast("God: say [ready] to continue");
+        targetToGo = target;
         server.setWaitingToGo(true);
         firstDayChat();
 
@@ -200,13 +215,52 @@ public class GameManager {
             sleep(1);
             if (readyToGo == server.getMaxCapacity()) {
                 readyToGo = 0;
+                server.setWaitingToGo(false);
+                break;
+            }
+        }
+    }
+
+     */
+
+    public synchronized void game() {
+        server.setActiveClients(server.getClientThreads());
+        createPlayers();
+        giveRoles();
+        firstNight();
+
+        sleep(5);
+        server.broadcast("God: say [!ready] to continue", server.getClientThreads());
+        targetToGo = server.getMaxCapacity();
+        server.setWaitingToGo(true);
+        firstDayChat();
+
+        while(true){
+            sleep(1);
+            if (readyToGo == targetToGo) {
+
+                readyToGo = 0;
+                server.setWaitingToGo(false);
                 break;
             }
         }
 
-        server.broadcast("God: chat for 25 seconds!");
+        server.broadcast("God: chat for 25 seconds!", server.getClientThreads());
         sleep(25);
         waitAllClients();
+        //System.out.println(45855);
+        /*
+        notifyAllClients();
+        sleep(15);
+        waitAllClients();
+        */
+        sleep(5);
+        server.broadcast("God: Day ends & night begins" , server.getClientThreads());
+        server.setActiveClients(mafiaClients);
+        wakeMafiaUp();
+        sleep(20);
+        waitAllClients();
+
 
 
     }

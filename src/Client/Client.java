@@ -158,15 +158,16 @@ public class Client  {
             // read message from user
             String message = scanner.nextLine();
 
-            if(message.equalsIgnoreCase("LOGOUT")) {
+
+            if(message.equalsIgnoreCase("!LOGOUT")) {
                 client.sendMessage(new ChatMessage(ChatMessage.LOGOUT, ""));
                 break;
             }
             // message to check who are present in chatroom
-            else if(message.equalsIgnoreCase("WHOISIN")) {
+            else if(message.equalsIgnoreCase("!WHOISIN")) {
                 client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
             }
-            else if(message.equalsIgnoreCase("READY")){
+            else if(message.equalsIgnoreCase("!READY") || message.equalsIgnoreCase("!GO")){
                 client.sendMessage(new ChatMessage(ChatMessage.READY, ""));
             }
             // regular text message
