@@ -188,7 +188,7 @@ public class Server {
                 break;
             }
         }
-        broadcast(notification + disconnectedClient + " has left the chat room." + notification, getClientThreads());
+        broadcast(notification + disconnectedClient + " has left the chat room." + notification, clientThreads);
     }
 
     /*
@@ -335,31 +335,31 @@ public class Server {
 
                 } catch (IOException e) {
                     display(username + " Exception reading Streams: " + e);
-                    break;
+                    e.printStackTrace();
                 }
 
                 if(count == 0){
                     continue;
                 }
 
+                if(message.equalsIgnoreCase("!LOGOUT")){
+                    //display(username + " disconnected with a LOGOUT message.");
+                    keepGoing = false;
+                    break;
+                }else if(message.equalsIgnoreCase("!WHOISIN")){
+                    writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
+                    // send list of active clients
+                    for (int i = 0; i < clientThreads.size(); ++i) {
+                        Server.ClientThread ct = clientThreads.get(i);
+                        writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
+                    }
+                }
 
                 if (!waitingToGo) {
-
-                    if(message.equalsIgnoreCase("!LOGOUT")){
-                        display(username + " disconnected with a LOGOUT message.");
-                        keepGoing = false;
-                    }else if(message.equalsIgnoreCase("!WHOISIN")){
-                        writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
-                        // send list of active clients
-                        for (int i = 0; i < clientThreads.size(); ++i) {
-                            Server.ClientThread ct = clientThreads.get(i);
-                            writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
-                        }
-                    }if(message.charAt(0) == '@'){
-
+                    if(message.charAt(0) == '@'){
+                        Player curPlayer = gameManager.getPlayer(this);
                         //String[] decodedMsg = message.split(" ");
-
-                        if(gameManager.getPlayer(this) instanceof GodFather){
+                        if( curPlayer instanceof GodFather){
                            gameManager.mafiaShot(message.substring(1));
                         }
 
@@ -373,14 +373,13 @@ public class Server {
                     }
 
                 } else {
-                    if (message.equalsIgnoreCase("!READY")) {
+                     if (message.equalsIgnoreCase("!READY")) {
                         gameManager.ready();
                         writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
                     }
                 }
 
             }
-
             // if out of the loop then disconnected and remove from client list
             remove(id);
             close();
@@ -404,6 +403,16 @@ public class Server {
         }
 
         // write a String to the Client output stream
+
+        private int indexOfUsername(String userN){
+            for(int i = 0; i < clientThreads.size(); i++){
+                if(clientThreads.get(i).getUsername().equals(userN)){
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         public boolean writeMsg(String msg) {
             // if Client is still connected send the message to it
             if (!socket.isConnected()) {
@@ -417,8 +426,11 @@ public class Server {
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {
                 display(notification + "Error sending message to " + username + notification);
+                clientThreads.remove(this);
+                broadcast("Disconnected Client " + username + " removed from list.", clientThreads);
                 display(e.toString());
             }
+
             return true;
         }
     }
