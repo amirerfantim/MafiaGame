@@ -17,7 +17,7 @@ public class Server {
     private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private final int maxCapacity = 6;
+    private final int maxCapacity = 3;
     // notification
     private final String notification = " *** ";
     private final GameManager gameManager;
@@ -47,6 +47,9 @@ public class Server {
         return clientThreads;
     }
 
+    public ArrayList<ClientThread> getActiveClients() {
+        return activeClients;
+    }
 
     public void setActiveClients(ArrayList<ClientThread> activeClients) {
         this.activeClients = activeClients;
@@ -352,7 +355,15 @@ public class Server {
                             Server.ClientThread ct = clientThreads.get(i);
                             writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                         }
-                    }else{
+                    }if(message.charAt(0) == '@'){
+
+                        //String[] decodedMsg = message.split(" ");
+
+                        if(gameManager.getPlayer(this) instanceof GodFather){
+                           gameManager.mafiaShot(message.substring(1));
+                        }
+
+                    } else{
                         boolean confirmation = broadcast(username + ": " + message, activeClients);
 
                         if (!confirmation) {
