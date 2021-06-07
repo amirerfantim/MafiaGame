@@ -282,6 +282,7 @@ public class GameManager {
         server.broadcast("God: to hill someone, LectorDoctor send -> [ @<username> ] ", server.getActiveClients());
         wakeMafiaUp();
         sleep(mafiaNightTime);
+        server.broadcast("God: Mafias go to sleep", server.getClientThreads());
         waitAllClients();
         isGodFatherShot = false;
         isLectorDoctorHill =false;
@@ -300,9 +301,24 @@ public class GameManager {
         return null;
     }
 
-    public boolean ready() {
+    public void ready() {
         readyToGo++;
-        return readyToGo == targetToGo;
+    }
+
+    public void waitUntilFull(int targetToGo){
+
+        server.broadcast("God: say [!ready] to continue", server.getClientThreads());
+        server.setWaitingToGo(true);
+
+        while(true){
+            sleep(1);
+            if (readyToGo == targetToGo) {
+
+                readyToGo = 0;
+                server.setWaitingToGo(false);
+                break;
+            }
+        }
     }
 
     /*
@@ -332,20 +348,10 @@ public class GameManager {
         firstNight();
 
         sleep(5);
-        server.broadcast("God: say [!ready] to continue", server.getClientThreads());
-        targetToGo = server.getClientThreads().size();
-        server.setWaitingToGo(true);
         firstDayChat();
 
-        while(true){
-            sleep(1);
-            if (readyToGo == targetToGo) {
+        waitUntilFull(server.getClientThreads().size());
 
-                readyToGo = 0;
-                server.setWaitingToGo(false);
-                break;
-            }
-        }
         //day chat
         server.broadcast("God: chat for " + dayChatTime + " seconds!", server.getClientThreads());
         sleep(dayChatTime);
