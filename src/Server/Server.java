@@ -238,6 +238,8 @@ public class Server {
         // timestamp
         String date;
         private boolean isWait = false;
+        private boolean isLastMoment = false;
+        private boolean isDead = false;
 
         // Constructor
         ClientThread(Server server, Socket socket) {
@@ -287,6 +289,14 @@ public class Server {
             return isWait;
         }
 
+        public boolean isDead() {
+            return isDead;
+        }
+
+        public boolean isLastMoment() {
+            return isLastMoment;
+        }
+
         public String getUsername() {
             return username;
         }
@@ -295,8 +305,16 @@ public class Server {
             isWait = wait;
         }
 
+        public void setDead(boolean dead) {
+            isDead = dead;
+        }
+
         public void setUsername(String username) {
             this.username = username;
+        }
+
+        public void setLastMoment(boolean lastMoment) {
+            isLastMoment = lastMoment;
         }
 
         public synchronized void run() {
@@ -360,9 +378,17 @@ public class Server {
                         Player curPlayer = gameManager.getPlayer(this);
                         //String[] decodedMsg = message.split(" ");
                         if( curPlayer instanceof GodFather){
-                           gameManager.godFatherShot(message.substring(1));
+                           gameManager.godFatherShot(message.substring(1), this);
                         }else if(curPlayer instanceof LectorDoctor){
-                            gameManager.lectorHill(message.substring(1));
+                            gameManager.lectorHill(message.substring(1), this);
+                        }else if(curPlayer instanceof Doctor){
+                            gameManager.doctorHill(message.substring(1), this);
+                        }else if(curPlayer instanceof Detective){
+                            gameManager.detectiveAttempt(message.substring(1), this);
+                        }else if(curPlayer instanceof Professional){
+                            gameManager.professionalShot(message.substring(1), this);
+                        }else if(curPlayer instanceof Psychologist){
+                            gameManager.psychologistAttempt(message.substring(1), this);
                         }
 
                     } else{
@@ -378,6 +404,15 @@ public class Server {
                      if (message.equalsIgnoreCase("!READY")) {
                         gameManager.ready();
                         writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                    }else {
+                         writeMsg("Wrong input -> try again.");
+                     }
+                } if(isLastMoment){
+                    if (message.equalsIgnoreCase("!WATCH")) {
+                        writeMsg("Well done! watch the game!");
+                        isWait = true;
+                    }else{
+                        writeMsg("Wrong input!");
                     }
                 }
 
@@ -434,6 +469,19 @@ public class Server {
             }
 
             return true;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ClientThread that = (ClientThread) o;
+            return Objects.equals(getUsername(), that.getUsername());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getUsername());
         }
     }
 
