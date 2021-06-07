@@ -17,7 +17,7 @@ public class Server {
     private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private final int maxCapacity = 6;
+    private final int maxCapacity = 10;
     // notification
     private final String notification = " *** ";
     private final GameManager gameManager;
@@ -237,9 +237,8 @@ public class Server {
         String message;
         // timestamp
         String date;
-        private boolean isWait = false;
-        private boolean isLastMoment = false;
-        private boolean isDead = false;
+        private boolean isWait = false, isLastMoment = false, isVoted = false, canTalk = true ;
+        private int votes = 0;
 
         // Constructor
         ClientThread(Server server, Socket socket) {
@@ -289,12 +288,24 @@ public class Server {
             return isWait;
         }
 
-        public boolean isDead() {
-            return isDead;
+        public boolean isCanTalk() {
+            return canTalk;
         }
 
         public boolean isLastMoment() {
             return isLastMoment;
+        }
+
+        public boolean isVoted() {
+            return isVoted;
+        }
+
+        public int getVotes() {
+            return votes;
+        }
+
+        public void setCanTalk(boolean canTalk) {
+            this.canTalk = canTalk;
         }
 
         public String getUsername() {
@@ -305,16 +316,20 @@ public class Server {
             isWait = wait;
         }
 
-        public void setDead(boolean dead) {
-            isDead = dead;
-        }
-
         public void setUsername(String username) {
             this.username = username;
         }
 
         public void setLastMoment(boolean lastMoment) {
             isLastMoment = lastMoment;
+        }
+
+        public void setVoted(boolean voted) {
+            isVoted = voted;
+        }
+
+        public void setVotes(int votes) {
+            this.votes = votes;
         }
 
         public synchronized void run() {
@@ -372,47 +387,62 @@ public class Server {
                         writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                     }
                 }
+                if(canTalk) {
+                    if (!waitingToGo && !isLastMoment) {
+                        String[] voteString = message.split(" ");
 
-                if (!waitingToGo) {
-                    if(message.charAt(0) == '@'){
-                        Player curPlayer = gameManager.getPlayer(this);
-                        //String[] decodedMsg = message.split(" ");
-                        if( curPlayer instanceof GodFather){
-                           gameManager.godFatherShot(message.substring(1), this);
-                        }else if(curPlayer instanceof LectorDoctor){
-                            gameManager.lectorHill(message.substring(1), this);
-                        }else if(curPlayer instanceof Doctor){
-                            gameManager.doctorHill(message.substring(1), this);
-                        }else if(curPlayer instanceof Detective){
-                            gameManager.detectiveAttempt(message.substring(1), this);
-                        }else if(curPlayer instanceof Professional){
-                            gameManager.professionalShot(message.substring(1), this);
-                        }else if(curPlayer instanceof Psychologist){
-                            gameManager.psychologistAttempt(message.substring(1), this);
+                        if (message.charAt(0) == '@') {
+                            Player curPlayer = gameManager.getPlayer(this);
+                            //String[] decodedMsg = message.split(" ");
+                            if (curPlayer instanceof GodFather) {
+                                gameManager.godFatherShot(message.substring(1), this);
+                            } else if (curPlayer instanceof LectorDoctor) {
+                                gameManager.lectorHill(message.substring(1), this);
+                            } else if (curPlayer instanceof Doctor) {
+                                gameManager.doctorHill(message.substring(1), this);
+                            } else if (curPlayer instanceof Detective) {
+                                gameManager.detectiveAttempt(message.substring(1), this);
+                            } else if (curPlayer instanceof Professional) {
+                                gameManager.professionalShot(message.substring(1), this);
+                            } else if (curPlayer instanceof Psychologist) {
+                                gameManager.psychologistAttempt(message.substring(1), this);
+                            } else if (curPlayer instanceof Invulnerable) {
+                                if (message.substring(1).equalsIgnoreCase("!RESULT")) {
+                                    gameManager.invulnerableAttempt(this);
+                                }
+                            } else if (curPlayer instanceof Mayor) {
+                                if (message.substring(1).equalsIgnoreCase("!CANCEL")) {
+                                    gameManager.mayorAttempt(this);
+                                }
+                            }
+                        } else if (voteString[0].equalsIgnoreCase("!VOTE")) {
+                            if (voteString[1].charAt(0) == '@') {
+                                gameManager.vote(voteString[1].substring(1), this);
+                            }
+                        } else {
+                            boolean confirmation = broadcast(username + ": " + message, activeClients);
+
+                            if (!confirmation) {
+                                String msg = notification + "Sorry. No such user exists." + notification;
+                                writeMsg(msg);
+                            }
                         }
 
-                    } else{
-                        boolean confirmation = broadcast(username + ": " + message, activeClients);
-
-                        if (!confirmation) {
-                            String msg = notification + "Sorry. No such user exists." + notification;
-                            writeMsg(msg);
+                    } else if (waitingToGo && !isLastMoment) {
+                        if (message.equalsIgnoreCase("!READY")) {
+                            gameManager.ready();
+                            writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                        } else {
+                            writeMsg("Wrong input -> try again.");
                         }
                     }
-
-                } else {
-                     if (message.equalsIgnoreCase("!READY")) {
-                        gameManager.ready();
-                        writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
-                    }else {
-                         writeMsg("Wrong input -> try again.");
-                     }
-                } if(isLastMoment){
-                    if (message.equalsIgnoreCase("!WATCH")) {
-                        writeMsg("Well done! watch the game!");
-                        isWait = true;
-                    }else{
-                        writeMsg("Wrong input!");
+                    if (isLastMoment) {
+                        if (message.equalsIgnoreCase("!WATCH")) {
+                            writeMsg("Well done! watch the game!");
+                            isWait = true;
+                        } else {
+                            writeMsg("Wrong input!");
+                        }
                     }
                 }
 
