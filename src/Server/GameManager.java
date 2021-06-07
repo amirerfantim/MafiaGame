@@ -17,8 +17,9 @@ public class GameManager {
     private int readyToGo = 0;
     private int targetToGo = 0;
 
-    private final int dayChatTime = 25, mafiaNight = 25;
-    private boolean isGodFatherShot = false, isLectorDoctorhill = false;
+    private final int dayChatTime = 25, mafiaNightTime = 45;
+    private boolean isGodFatherShot = false, isLectorDoctorHill = false;
+    private Server.ClientThread protectedByLector = null;
 
 
     public GameManager(int numberOfPlayers, ArrayList<Server.ClientThread> clientThreads, Server server) {
@@ -202,22 +203,90 @@ public class GameManager {
         }
     }
 
-    public void mafiaShot(String usernameToFind) {
+    public void godFatherShot(String usernameToFind) {
 
         Player player = null;
+
+        for(Server.ClientThread ct : server.getClientThreads()){
+            if(connectClientToRole.get(ct) instanceof GodFather){
+                ArrayList<Server.ClientThread> godFather = new ArrayList<>();
+                godFather.add(ct);
+                server.setActiveClients(godFather);
+            }
+        }
 
         if (!isGodFatherShot) {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
-                    server.broadcast("God: Nice Shot! sleep!", server.getActiveClients());
-                    player.setAlive(false);
+                    if(player instanceof CitizenTeam) {
+                        server.broadcast("God: Nice Shot!", server.getActiveClients());
+                        isGodFatherShot = true;
+                        player.setAlive(false);
+                    }else{
+                        server.broadcast("God: you cant shot a mafia!", server.getActiveClients());
+                    }
                 }
             }if(player == null) {
                 server.broadcast("God: there isn't any client with this username", server.getActiveClients());
             }
         }else{
+            server.broadcast("God: you shot before", server.getActiveClients());
         }
+
+        server.setActiveClients(mafiaClients);
+
+    }
+
+    public void lectorHill(String usernameToFind){
+        Player player = null;
+
+        for(Server.ClientThread ct : server.getClientThreads()){
+            if(connectClientToRole.get(ct) instanceof LectorDoctor){
+                ArrayList<Server.ClientThread> lectorDoctor = new ArrayList<>();
+                lectorDoctor.add(ct);
+                server.setActiveClients(lectorDoctor);
+            }
+        }
+
+        if (!isLectorDoctorHill) {
+            for (Server.ClientThread ct : clientThreads) {
+                if (usernameToFind.equals(ct.getUsername())) {
+                    player = connectClientToRole.get(ct);
+                    if(player instanceof MafiaTeam) {
+                        server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
+                        isLectorDoctorHill = true;
+                        protectedByLector = ct;
+                    }else{
+                        server.broadcast("God: you cant hill a citizen!", server.getActiveClients());
+                    }
+                }
+            }if(player == null) {
+                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+            }
+        }else{
+            server.broadcast("God: you hill before", server.getActiveClients());
+        }
+
+        server.setActiveClients(mafiaClients);
+
+    }
+
+    public void mafiaNight(){
+
+        server.broadcast("God: Night begins" , server.getClientThreads());
+        server.broadcast("God: Mafia Team chat & kill some one within " + mafiaNightTime + " seconds!"
+                , server.getClientThreads());
+        server.setActiveClients(mafiaClients);
+        server.broadcast("God: to kill someone, GodFather send -> [ @<username> ] ", server.getActiveClients());
+        server.broadcast("God: to hill someone, LectorDoctor send -> [ @<username> ] ", server.getActiveClients());
+        wakeMafiaUp();
+        sleep(mafiaNightTime);
+        waitAllClients();
+        isGodFatherShot = false;
+        isLectorDoctorHill =false;
+        protectedByLector = null;
+        server.setActiveClients(server.getClientThreads());
     }
 
     public Server.ClientThread findClient(String usernameToFind){
@@ -264,7 +333,7 @@ public class GameManager {
 
         sleep(5);
         server.broadcast("God: say [!ready] to continue", server.getClientThreads());
-        targetToGo = server.getMaxCapacity();
+        targetToGo = server.getClientThreads().size();
         server.setWaitingToGo(true);
         firstDayChat();
 
@@ -285,19 +354,8 @@ public class GameManager {
         sleep(5);
 
 
-
-
         //mafia night shot & chat & lectorDoctor
-        server.broadcast("God: Night begins" , server.getClientThreads());
-        server.broadcast("God: Mafia Team chat & kill some one within " + mafiaNight + " seconds!"
-                , server.getClientThreads());
-        server.setActiveClients(mafiaClients);
-        server.broadcast("God: to kill someone, GodFather send -> [ @<username> ] ", server.getActiveClients());
-        server.broadcast("God: to hill someone, LectorDoctor send -> [ @<username> ] ", server.getActiveClients());
-        wakeMafiaUp();
-        sleep(mafiaNight);
-        waitAllClients();
-
+        mafiaNight();
 
 
 

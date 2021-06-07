@@ -17,7 +17,7 @@ public class Server {
     private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private final int maxCapacity = 3;
+    private final int maxCapacity = 6;
     // notification
     private final String notification = " *** ";
     private final GameManager gameManager;
@@ -360,7 +360,9 @@ public class Server {
                         Player curPlayer = gameManager.getPlayer(this);
                         //String[] decodedMsg = message.split(" ");
                         if( curPlayer instanceof GodFather){
-                           gameManager.mafiaShot(message.substring(1));
+                           gameManager.godFatherShot(message.substring(1));
+                        }else if(curPlayer instanceof LectorDoctor){
+                            gameManager.lectorHill(message.substring(1));
                         }
 
                     } else{
