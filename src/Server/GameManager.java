@@ -4,8 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-// lector doctor 1 time
+// lector doctor 1 time himself
 // ready!
+// username
+// cant hill or kill already dead players
+//muted can vote
+//announce died  in night & muted
+// shuffle role inverulabele
+// cant vote dead people
 
 public class GameManager {
 
@@ -21,7 +27,7 @@ public class GameManager {
     private int readyToGo = 0, votedSoFar = 0;
     private int targetToGo = 0;
 
-    private final int firstDayChatTime = 25, mafiaNightTime = 45, citizenNightTime = 30, dayChatTime = 90;
+    private final int firstDayChatTime = 20, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 100;
 
     private boolean isGodFatherShot = false, isLectorDoctorHill = false, isDoctorHill = false,
                     isDetectiveAttempt = false, isProfessionalShot = false,
@@ -231,6 +237,15 @@ public class GameManager {
         }
     }
 
+    public boolean isClientDied(Server.ClientThread ct){
+            for(Server.ClientThread obj : deadClients.keySet()){
+                if(obj.equals(ct)){
+                    return true;
+                }
+           }
+            return false;
+    }
+
     public void godFatherShot(String usernameToFind, Server.ClientThread godFatherCT) {
 
         Player player = null;
@@ -243,20 +258,24 @@ public class GameManager {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
-                    if(player instanceof CitizenTeam) {
-                        server.broadcast("God: Nice Shot!", server.getActiveClients());
-                        isGodFatherShot = true;
-                        player.setAlive(false);
+                    if(!isClientDied(ct)) {
+                        if (player instanceof CitizenTeam) {
+                            server.broadcast("God: Nice Shot!", server.getActiveClients());
+                            isGodFatherShot = true;
+                            player.setAlive(false);
 
-                        if(player instanceof Invulnerable ){
-                            if(!((Invulnerable) player).isHasBeenShot()) {
-                                ((Invulnerable) player).setHasBeenShot(true);
-                                player.setAlive(true);
+                            if (player instanceof Invulnerable) {
+                                if (!((Invulnerable) player).isHasBeenShot()) {
+                                    ((Invulnerable) player).setHasBeenShot(true);
+                                    player.setAlive(true);
+                                }
                             }
-                        }
 
-                    }else{
-                        server.broadcast("God: you cant shot a mafia!", server.getActiveClients());
+                        } else {
+                            server.broadcast("God: you cant shot a mafia!", server.getActiveClients());
+                        }
+                    }else {
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
                     }
                 }
             }if(player == null) {
@@ -281,12 +300,16 @@ public class GameManager {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
-                    if(player instanceof MafiaTeam) {
-                        server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
-                        isLectorDoctorHill = true;
-                        protectedByLector = ct;
+                    if(!isClientDied(ct)) {
+                        if (player instanceof MafiaTeam) {
+                            server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
+                            isLectorDoctorHill = true;
+                            protectedByLector = ct;
+                        } else {
+                            server.broadcast("God: you cant hill a citizen!", server.getActiveClients());
+                        }
                     }else{
-                        server.broadcast("God: you cant hill a citizen!", server.getActiveClients());
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
                     }
                 }
             }if(player == null) {
@@ -310,9 +333,14 @@ public class GameManager {
         if (!isDoctorHill) {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
-                    player = connectClientToRole.get(ct);
-                    server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
-                    isLectorDoctorHill = true;
+                    if(!isClientDied(ct)) {
+                        player = connectClientToRole.get(ct);
+                        player.setAlive(true);
+                        server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
+                        isLectorDoctorHill = true;
+                    }else{
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                    }
 
                 }
             }if(player == null) {
@@ -337,15 +365,19 @@ public class GameManager {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
-                    if(player instanceof CitizenTeam || player instanceof GodFather) {
-                        server.broadcast("God: " + ct.getUsername() + " is in Citizen's team"
-                                , server.getActiveClients());
-                    }else {
-                        server.broadcast("God: " + ct.getUsername() + " is in Mafia's team"
-                                , server.getActiveClients());
-                    }
 
-                    isDetectiveAttempt = true;
+                    if(!isClientDied(ct)) {
+                        if (player instanceof CitizenTeam || player instanceof GodFather) {
+                            server.broadcast("God: " + ct.getUsername() + " is in Citizen's team"
+                                    , server.getActiveClients());
+                        } else {
+                            server.broadcast("God: " + ct.getUsername() + " is in Mafia's team"
+                                    , server.getActiveClients());
+                        }
+                        isDetectiveAttempt = true;
+                    }else{
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                    }
                 }
             }if(player == null) {
                 server.broadcast("God: there isn't any client with this username", server.getActiveClients());
@@ -370,15 +402,19 @@ public class GameManager {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
-                    server.broadcast("God: Nice Shot!", server.getActiveClients());
-                    isProfessionalShot = true;
-                    if(player instanceof MafiaTeam) {
-                        player.setAlive(false);
-                        if(ct.equals(protectedByLector)){
-                            player.setAlive(true);
+                    if(!isClientDied(ct)) {
+                        server.broadcast("God: Nice Shot!", server.getActiveClients());
+                        isProfessionalShot = true;
+                        if (player instanceof MafiaTeam) {
+                            player.setAlive(false);
+                            if (ct.equals(protectedByLector)) {
+                                player.setAlive(true);
+                            }
+                        } else {
+                            connectClientToRole.get(professionalCT).setAlive(false);
                         }
                     }else{
-                        connectClientToRole.get(professionalCT).setAlive(false);
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
                     }
                 }
             }if(player == null) {
@@ -394,7 +430,6 @@ public class GameManager {
 
     public void psychologistAttempt(String usernameToFind, Server.ClientThread psychologistCT) {
 
-        Player player = null;
         ArrayList<Server.ClientThread> psychologist = new ArrayList<>();
         ArrayList<Server.ClientThread> activeClients = server.getActiveClients();
         psychologist.add(psychologistCT);
@@ -404,10 +439,14 @@ public class GameManager {
         if (!isPsychologistMuted) {
             for (Server.ClientThread ct : clientThreads) {
                 if (usernameToFind.equals(ct.getUsername())) {
-                    server.broadcast("God: Well Done!", server.getActiveClients());
-                    isPsychologistMuted = true;
-                    ct.setCanTalk(false);
                     found = true;
+                    if(!isClientDied(ct)) {
+                        server.broadcast("God: Well Done!", server.getActiveClients());
+                        isPsychologistMuted = true;
+                        ct.setCanTalk(false);
+                    }else{
+                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                    }
                 }
             }if(!found) {
                 server.broadcast("God: there isn't any client with this username", server.getActiveClients());
@@ -591,7 +630,7 @@ public class GameManager {
         sleep(citizenNightTime);
         server.broadcast("God: Detective go to sleep", server.getClientThreads());
         waitAllClients();
-        isDoctorHill = false;
+        isDetectiveAttempt = false;
         server.setActiveClients(server.getClientThreads());
     }
 
@@ -690,7 +729,8 @@ public class GameManager {
         server.broadcast("God: Mayor, do yo wanna cancel the voting ? you have "
                 + citizenNightTime + " seconds!", server.getClientThreads());
 
-        ArrayList<Server.ClientThread> mayor = new ArrayList<>();
+        ArrayList<Server.ClientThread> mayor
+                = new ArrayList<>();
 
         for(Server.ClientThread ct : server.getClientThreads()){
             if(connectClientToRole.get(ct) instanceof Mayor){
@@ -795,10 +835,12 @@ public class GameManager {
         while(System.currentTimeMillis() < end){
             sleep(1);
             if(votedSoFar == server.getClientThreads().size() - deadClients.size()){
+                server.broadcast("God: Day ended early" , server.getClientThreads());
                 break;
             }
         }
         server.broadcast("God: Day ends" , server.getClientThreads());
+        waitAllClients();
 
     }
 
@@ -899,17 +941,16 @@ public class GameManager {
         sleep(5);
 
         while(keepGoing) {
-            /*
+
             mafiaNight();
             sleep(5);
 
-             */
-
             doctorNight();
             sleep(5);
-/*
+
             detectiveNight();
             sleep(5);
+
 
             professionalNight();
             sleep(5);
@@ -919,8 +960,6 @@ public class GameManager {
 
             psychologistNight();
             sleep(5);
-
- */
 
             collectDeadClients();
             presentLastMoment(deadClients);
@@ -946,9 +985,13 @@ public class GameManager {
             votingHasBeenCanceled = false;
             protectedByLector = null;
 
+            waitAllClients();
+
             for(Server.ClientThread ct : server.getClientThreads()){
                 if(connectClientToRole.get(ct).isAlive()) {
                     ct.setCanTalk(true);
+                    ct.setVoted(false);
+                    ct.setVotes(0);
                 }
             }
 
