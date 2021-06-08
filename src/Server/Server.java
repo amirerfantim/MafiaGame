@@ -387,10 +387,10 @@ public class Server {
                         writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                     }
                 }
+
+                String[] voteString = message.split(" ");
                 if(canTalk) {
                     if (!waitingToGo && !isLastMoment) {
-                        String[] voteString = message.split(" ");
-
                         if (message.charAt(0) == '@') {
                             Player curPlayer = gameManager.getPlayer(this);
                             //String[] decodedMsg = message.split(" ");
