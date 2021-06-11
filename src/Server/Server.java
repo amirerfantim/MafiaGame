@@ -436,14 +436,6 @@ public class Server {
                             writeMsg("Wrong input -> try again.");
                         }
                     }
-                    if (isLastMoment) {
-                        if (message.equalsIgnoreCase("!WATCH")) {
-                            writeMsg("Well done! watch the game!");
-                            isWait = true;
-                        } else {
-                            writeMsg("Wrong input!");
-                        }
-                    }
                 }
 
             }
@@ -517,5 +509,4 @@ public class Server {
 
 
 }
-
 

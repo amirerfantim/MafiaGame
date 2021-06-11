@@ -8,13 +8,16 @@ import java.util.HashMap;
 // ready!
 // username
 // cant hill or kill already dead players +
-// muted can vote +
+// muted can vote
 // announce died  in night & muted +
 // shuffle role inverulabele +
 // cant vote dead people +
 // player can vote at night
 // chat file
 // can skip day
+// vote end early if somone dead logout
+// out dead people failed +
+// nobody is dead in night 2 ! professional if he wrong for ex +
 
 
 public class GameManager {
@@ -31,12 +34,12 @@ public class GameManager {
     private int readyToGo = 0, votedSoFar = 0;
     private int targetToGo = 0;
 
-    private final int firstDayChatTime = 20, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 100;
+    private final int firstDayChatTime = 10, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 120;
 
     private boolean isGodFatherShot = false, isLectorDoctorHill = false, isDoctorHill = false,
-                    isDetectiveAttempt = false, isProfessionalShot = false,
-                    isPsychologistMuted = false, isInvulnerableAttempt  =false,
-                    isMayorAttempt = false, isLectorHillItself = false;
+            isDetectiveAttempt = false, isProfessionalShot = false,
+            isPsychologistMuted = false, isInvulnerableAttempt  =false,
+            isMayorAttempt = false, isLectorHillItself = false;
     private int numberOfInvulnerableAttempt = 0;
     private Server.ClientThread protectedByLector = null;
     private boolean votingHasBeenCanceled = false, keepGoing = true;
@@ -117,7 +120,6 @@ public class GameManager {
                 citizenTeam.put(clientThread, (CitizenTeam) curPlayer);
             }
         }
-
  */
         for (Server.ClientThread clientThread : server.clientThreads) {
             if (connectClientToRole.get(clientThread) instanceof MafiaTeam) {
@@ -221,7 +223,6 @@ public class GameManager {
             }
         }
     }
-
  */
 
     public synchronized void waitAllClients() {
@@ -242,12 +243,12 @@ public class GameManager {
     }
 
     public boolean isClientDied(Server.ClientThread ct){
-            for(Server.ClientThread obj : deadClients){
-                if(obj.equals(ct)){
-                    return true;
-                }
-           }
-            return false;
+        for(Server.ClientThread obj : deadClients){
+            if(obj.equals(ct)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public void godFatherShot(String usernameToFind, Server.ClientThread godFatherCT) {
@@ -425,7 +426,7 @@ public class GameManager {
                         isProfessionalShot = true;
                         if (player instanceof MafiaTeam) {
                             player.setAlive(false);
-                            if (ct.equals(protectedByLector)) {
+                            if (ct.equals(protectedByLector) || player instanceof GodFather) {
                                 player.setAlive(true);
                             }
                         } else {
@@ -821,30 +822,30 @@ public class GameManager {
             Player player = connectClientToRole.get(ct);
             if(!player.isAlive()){
                 for(Server.ClientThread clientThread : deadClients){
-                    if(clientThread.equals(ct)){
+                    if (clientThread.equals(ct)) {
                         isHereBefore = true;
+                        break;
                     }
                 }
                 if(!isHereBefore) {
                     deadClients.add(ct);
+                    presentLastMoment(ct);
                 }
+                isHereBefore = false;
             }
         }
     }
 
-    public synchronized void presentLastMoment(ArrayList<Server.ClientThread> players){
-
-        for(Server.ClientThread ct : players){
-            if(!ct.isLastMoment()) {
-                ct.setLastMoment(true);
-                ct.setWait(false);
-                synchronized (ct) {
-                    ct.notify();
-                }
-                ct.writeMsg("you are watching the game -> To logout enter [ !logout ]");
+    public synchronized void presentLastMoment(Server.ClientThread ct){
+        if(!ct.isLastMoment()) {
+            ct.setLastMoment(true);
+            ct.setWait(false);
+            ct.setCanTalk(false);
+            synchronized (ct) {
+                ct.notify();
             }
+            ct.writeMsg("you are watching the game -> To logout enter [ !logout ]");
         }
-
     }
 
     public void dayTime(){
@@ -901,15 +902,18 @@ public class GameManager {
             }
         }
 
-        if(!noOneIsOut){
+        if(noOneIsOut){
             server.broadcast("God: " + deadClient.getUsername() + " is out of the game",
                     server.getClientThreads());
+        }else{
+            deadClients.add(deadClient);
+            presentLastMoment(deadClient);
+            announceDeadClients();
         }
-
 
     }
 
-    public void checkEnd(){
+    public boolean checkEnd(){
         Player player;
         int mafiaCount = 0, citizenCount = 0;
         for(Server.ClientThread ct : server.clientThreads){
@@ -926,11 +930,14 @@ public class GameManager {
         if(mafiaCount == 0){
             keepGoing = false;
             server.broadcast("God: Citizen's Won! THE END!", server.getClientThreads());
+            return true;
         }
         if(mafiaCount == citizenCount){
             keepGoing = false;
             server.broadcast("God: Mafia's Won! THE END!", server.getClientThreads());
+            return true;
         }
+        return false;
     }
 
     public void announceDeadClients(){
@@ -948,7 +955,6 @@ public class GameManager {
         targetToGo = target;
         server.setWaitingToGo(true);
         firstDayChat();
-
         while(true){
             sleep(1);
             if (readyToGo == server.getMaxCapacity()) {
@@ -958,7 +964,6 @@ public class GameManager {
             }
         }
     }
-
      */
 
     public synchronized void game() {
@@ -985,23 +990,23 @@ public class GameManager {
             detectiveNight();
             sleep(5);
 
-
             professionalNight();
             sleep(5);
 
             invulnerableNight();
             sleep(5);
-/*
+
             psychologistNight();
             sleep(5);
 
- */
 
             collectDeadClients();
-            presentLastMoment(deadClients);
             announceDeadClients();
+            waitAllClients();
 
-            checkEnd();
+            if(checkEnd()){
+                continue;
+            }
 
             dayTime();
             sleep(5);
@@ -1012,12 +1017,11 @@ public class GameManager {
             if(!votingHasBeenCanceled){
                 applyVoting();
             }
+            waitAllClients();
 
-            collectDeadClients();
-            presentLastMoment(deadClients);
-
-            checkEnd();
-
+            if(checkEnd()){
+                continue;
+            }
             votedSoFar = 0;
             votingHasBeenCanceled = false;
             protectedByLector = null;
