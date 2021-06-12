@@ -5,19 +5,22 @@ import java.util.Collections;
 import java.util.HashMap;
 
 // lector doctor 1 time himself +
-// ready!
-// username
-// cant hill or kill already dead players +
-// muted can vote
 // announce died  in night & muted +
 // shuffle role inverulabele +
+// cant hill or kill already dead players +
 // cant vote dead people +
-// player can vote at night
-// chat file
-// can skip day
-// vote end early if somone dead logout
 // out dead people failed +
 // nobody is dead in night 2 ! professional if he wrong for ex +
+// muted can vote +
+// lector himself bug +
+// chat file -
+// player can vote at night -
+
+// ready!
+// username
+// can skip day
+// vote end early if somone dead logout
+// inverulabele result for all
 
 
 public class GameManager {
@@ -31,7 +34,7 @@ public class GameManager {
     //private HashMap<Server.ClientThread, MafiaTeam> mafiaTeam = new HashMap<>();
     //private HashMap<Server.ClientThread, CitizenTeam> citizenTeam = new HashMap<>();
     private Server server;
-    private int readyToGo = 0, votedSoFar = 0;
+    private int readyToGo = 0, votedSoFar = 0, disconnectedAliveClients = 0;
     private int targetToGo = 0;
 
     private final int firstDayChatTime = 10, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 120;
@@ -39,7 +42,7 @@ public class GameManager {
     private boolean isGodFatherShot = false, isLectorDoctorHill = false, isDoctorHill = false,
             isDetectiveAttempt = false, isProfessionalShot = false,
             isPsychologistMuted = false, isInvulnerableAttempt  =false,
-            isMayorAttempt = false, isLectorHillItself = false;
+            isMayorAttempt = false, isLectorHillItself = false, isDoctorHillItself = false;
     private int numberOfInvulnerableAttempt = 0;
     private Server.ClientThread protectedByLector = null;
     private boolean votingHasBeenCanceled = false, keepGoing = true;
@@ -225,6 +228,13 @@ public class GameManager {
     }
  */
 
+    public void disconnected(Server.ClientThread ct){
+        if(connectClientToRole.get(ct).isAlive()){
+            disconnectedAliveClients += 1;
+            deadClients.add(ct);
+        }
+    }
+
     public synchronized void waitAllClients() {
         for (Server.ClientThread clientThread : server.clientThreads) {
             clientThread.setWait(true);
@@ -354,9 +364,22 @@ public class GameManager {
                 if (usernameToFind.equals(ct.getUsername())) {
                     if(!isClientDied(ct)) {
                         player = connectClientToRole.get(ct);
-                        player.setAlive(true);
-                        server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
-                        isLectorDoctorHill = true;
+                        if(player instanceof Doctor){
+                            if(!isDoctorHillItself){
+                                isDoctorHillItself = true;
+                                server.broadcast("God: you protected yourself",
+                                        server.getActiveClients());
+                                isDoctorHill = true;
+                            }else{
+                                server.broadcast("God: you hill yourself once",
+                                        server.getActiveClients());
+                            }
+
+                        }else {
+                            player.setAlive(true);
+                            server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
+                            isDoctorHill = true;
+                        }
                     }else{
                         server.broadcast("God: Player is already dead!", server.getActiveClients());
                     }
@@ -861,7 +884,7 @@ public class GameManager {
 
         while(System.currentTimeMillis() < end){
             sleep(1);
-            if(votedSoFar == server.getClientThreads().size() - deadClients.size()){
+            if(votedSoFar >= server.getMaxCapacity() - deadClients.size() - disconnectedAliveClients){
                 server.broadcast("God: Day ended early" , server.getClientThreads());
                 break;
             }

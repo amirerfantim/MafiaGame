@@ -17,7 +17,7 @@ public class Server {
     private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private final int maxCapacity = 10;
+    private int maxCapacity = 10;
     // notification
     private final String notification = " *** ";
     private final GameManager gameManager;
@@ -29,14 +29,15 @@ public class Server {
 
     //constructor that receive the port to listen to for connection as parameter
 
-    public Server(int port) {
+    public Server(int port, int maxCapacity) {
         // the port
         this.port = port;
         // to display hh:mm:ss
         simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         // an ArrayList to keep the list of the Client
         clientThreads = new ArrayList<ClientThread>();
-        gameManager = new GameManager(maxCapacity, clientThreads, this);
+        this.maxCapacity = maxCapacity;
+        gameManager = new GameManager(this.maxCapacity, clientThreads, this);
     }
 
     public int getMaxCapacity() {
@@ -53,6 +54,10 @@ public class Server {
 
     public void setActiveClients(ArrayList<ClientThread> activeClients) {
         this.activeClients = activeClients;
+    }
+
+    public void setMaxCapacity(int maxCapacity) {
+        this.maxCapacity = maxCapacity;
     }
 
     public void setWaitingToGo(boolean waitingToGo) {
@@ -196,29 +201,23 @@ public class Server {
      * > java Server
      * > java Server portNumber
      * If the port number is not specified 1500 is used
+     *
      */
     public static void main(String[] args) {
         // start server on port 1500 unless a PortNumber is specified
-        int portNumber = 8686;
-        switch(args.length) {
-            case 1:
-                try {
-                    portNumber = Integer.parseInt(args[0]);
-                }
-                catch(Exception e) {
-                    System.out.println("Invalid port number.");
-                    System.out.println("Usage is: > java Server [portNumber]");
-                    return;
-                }
-            case 0:
-                break;
-            default:
-                System.out.println("Usage is: > java Server [portNumber]");
-                return;
 
-        }
+        Scanner scanner = new Scanner(System.in);
+        int portNumber = 8686, serverCapacity = 10;
+
+        System.out.print("enter max capacity of server: ");
+        serverCapacity = scanner.nextInt();
+
+        System.out.print("enter port number of server: ");
+        portNumber = scanner.nextInt();
+
+
         // create a server object and start it
-        Server server = new Server(portNumber);
+        Server server = new Server(portNumber, serverCapacity);
         server.start();
     }
 
@@ -377,6 +376,7 @@ public class Server {
 
                 if(message.equalsIgnoreCase("!LOGOUT")){
                     //display(username + " disconnected with a LOGOUT message.");
+                    gameManager.disconnected(this);
                     keepGoing = false;
                     break;
                 }else if(message.equalsIgnoreCase("!WHOISIN")){
@@ -436,6 +436,10 @@ public class Server {
                             writeMsg("Wrong input -> try again.");
                         }
                     }
+                } else if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment) {
+                    if (voteString[1].charAt(0) == '@') {
+                        gameManager.vote(voteString[1].substring(1), this);
+                    }
                 }
 
             }
@@ -485,6 +489,7 @@ public class Server {
             // if an error occurs, do not abort just inform the user
             catch (IOException e) {
                 display(notification + "Error sending message to " + username + notification);
+                gameManager.disconnected(this);
                 clientThreads.remove(this);
                 broadcast("Disconnected Client " + username + " removed from list.", clientThreads);
                 display(e.toString());
