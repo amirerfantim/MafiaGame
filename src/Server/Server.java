@@ -60,12 +60,15 @@ public class Server {
         this.maxCapacity = maxCapacity;
     }
 
+    public void setKeepGoing(boolean keepGoing) {
+        this.keepGoing = keepGoing;
+    }
+
     public void setWaitingToGo(boolean waitingToGo) {
         this.waitingToGo = waitingToGo;
     }
 
     public void start() {
-        keepGoing = true;
 
         //create socket server and wait for connection requests
         try
@@ -236,10 +239,13 @@ public class Server {
         String message;
         // timestamp
         String date;
-        private boolean isWait = false, isLastMoment = false, isVoted = false, canTalk = true ;
-        private int votes = 0;
+        private boolean isWait = false, isLastMoment = false,isReady = false, canTalk = true ;
+        private ClientThread vote;
+        private ArrayList<ClientThread> votes = new ArrayList<>();
+        private boolean keepGoing = true;
 
         // Constructor
+
         ClientThread(Server server, Socket socket) {
             this.server = server;
             // a unique id
@@ -295,16 +301,28 @@ public class Server {
             return isLastMoment;
         }
 
-        public boolean isVoted() {
-            return isVoted;
+        public ClientThread getVote() {
+            return vote;
         }
 
-        public int getVotes() {
+        public ArrayList<ClientThread> getVotes() {
             return votes;
+        }
+
+        public boolean isReady() {
+            return isReady;
         }
 
         public void setCanTalk(boolean canTalk) {
             this.canTalk = canTalk;
+        }
+
+        public void setVotes(ArrayList<ClientThread> votes) {
+            this.votes = votes;
+        }
+
+        public void setKeepGoing(boolean keepGoing) {
+            this.keepGoing = keepGoing;
         }
 
         public String getUsername() {
@@ -315,6 +333,14 @@ public class Server {
             isWait = wait;
         }
 
+        public void setVote(ClientThread vote) {
+            this.vote = vote;
+        }
+
+        public void setReady(boolean ready) {
+            isReady = ready;
+        }
+
         public void setUsername(String username) {
             this.username = username;
         }
@@ -323,17 +349,12 @@ public class Server {
             isLastMoment = lastMoment;
         }
 
-        public void setVoted(boolean voted) {
-            isVoted = voted;
-        }
-
-        public void setVotes(int votes) {
-            this.votes = votes;
+        public void addAVote(Server.ClientThread ct){
+            votes.add(ct);
         }
 
         public synchronized void run() {
 
-            boolean keepGoing = true;
 
             while (keepGoing) {
 
@@ -419,7 +440,15 @@ public class Server {
                             if (voteString[1].charAt(0) == '@') {
                                 gameManager.vote(voteString[1].substring(1), this);
                             }
-                        } else {
+                        } else if (message.equalsIgnoreCase("!READY")) {
+                            if(!isReady) {
+                                gameManager.ready();
+                                isReady = true;
+                                writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                            }else{
+                                writeMsg("you said you are ready before!");
+                            }
+                        }else {
                             boolean confirmation = broadcast(username + ": " + message, activeClients);
 
                             if (!confirmation) {
@@ -428,17 +457,18 @@ public class Server {
                             }
                         }
 
-                    } else if (waitingToGo && !isLastMoment) {
-                        if (message.equalsIgnoreCase("!READY")) {
-                            gameManager.ready();
-                            writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
-                        } else {
-                            writeMsg("Wrong input -> try again.");
-                        }
                     }
                 } else if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment) {
                     if (voteString[1].charAt(0) == '@') {
                         gameManager.vote(voteString[1].substring(1), this);
+                    }
+                } else if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
+                    if(!isReady) {
+                        gameManager.ready();
+                        isReady = true;
+                        writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                    }else{
+                        writeMsg("you said you are ready before!");
                     }
                 }
 
