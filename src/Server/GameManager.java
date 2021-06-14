@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 // lector doctor 1 time himself +
 // announce died  in night & muted +
-// shuffle role inverulabele +
+// shuffle role Invulnerable +
 // cant hill or kill already dead players +
 // cant vote dead people +
 // out dead people failed +
@@ -17,11 +17,11 @@ import java.util.HashMap;
 // player can vote at night -
 // can skip day +
 // show voters +
-// inverulabele result for all +
+// Invulnerable result for all +
 
 // ready!
 // username
-// vote end early if somone dead logout
+// vote end early if someone dead logout
 
 
 public class GameManager {
@@ -35,7 +35,7 @@ public class GameManager {
     //private HashMap<Server.ClientThread, MafiaTeam> mafiaTeam = new HashMap<>();
     //private HashMap<Server.ClientThread, CitizenTeam> citizenTeam = new HashMap<>();
     private Server server;
-    private int readyToGo = 0, disconnectedAliveClients = 0;
+    private int readyToGo = 0;
     private int targetToGo = 0;
 
     private final int firstDayChatTime = 10, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 300;
@@ -163,7 +163,7 @@ public class GameManager {
                 server.sendMsgToClient("God : You are God Father", clientThread);
                 showMafiaTeam(clientThread);
             } else if (curPlayer instanceof LectorDoctor) {
-                server.sendMsgToClient("God : You are Lecter Doctor", clientThread);
+                server.sendMsgToClient("God : You are Lector Doctor", clientThread);
                 showMafiaTeam(clientThread);
             } else if (curPlayer instanceof SimpleCitizen) {
                 server.sendMsgToClient("God : You are Simple citizen", clientThread);
@@ -248,17 +248,6 @@ public class GameManager {
     public synchronized void waitAllClients() {
         for (Server.ClientThread clientThread : server.clientThreads) {
             clientThread.setWait(true);
-        }
-    }
-
-    public synchronized void wakeMafiaUp() {
-        for (Server.ClientThread clientThread : server.clientThreads) {
-            if (connectClientToRole.get(clientThread) instanceof MafiaTeam) {
-                synchronized (clientThread) {
-                    clientThread.setWait(false);
-                    clientThread.notify();
-                }
-            }
         }
     }
 
@@ -846,18 +835,6 @@ public class GameManager {
         waitAllClients();
         isMayorAttempt = false;
         server.setActiveClients(server.getClientThreads());
-    }
-
-
-    public Server.ClientThread findClient(String usernameToFind){
-
-        for(Server.ClientThread ct :clientThreads){
-            if(usernameToFind.equals(ct.getUsername())){
-                return ct;
-            }
-        }
-        server.broadcast( "God: Player not found", server.getClientThreads());
-        return null;
     }
 
     public void ready() {

@@ -1,9 +1,5 @@
 package Client;
 
-
-
-import Server.ChatMessage;
-
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -13,7 +9,7 @@ import java.util.*;
 public class Client  {
 
     // notification
-    private String notification = " *** ";
+    private final String notification = " *** ";
 
     // for I/O
     private DataInputStream sInput;		// to read from the socket
@@ -112,15 +108,21 @@ public class Client  {
         try {
             if(sInput != null) sInput.close();
         }
-        catch(Exception e) {}
+        catch(Exception e) {
+            System.out.println("Error closing data input stream");
+        }
         try {
             if(sOutput != null) sOutput.close();
         }
-        catch(Exception e) {}
+        catch(Exception e) {
+            System.out.println("Error closing data output stream");
+        }
         try{
             if(socket != null) socket.close();
         }
-        catch(Exception e) {}
+        catch(Exception e) {
+            System.out.println("Error closing socket");
+        }
 
     }
     /*
@@ -136,7 +138,7 @@ public class Client  {
      */
     public static void main(String[] args) {
         // default values if not entered
-        int portNumber = 8888;
+        int portNumber;
         String serverAddress = "localhost";
         String userName ;
         Scanner scanner = new Scanner(System.in);
@@ -154,6 +156,7 @@ public class Client  {
 
         // infinite loop to get the input from the user
         while(true) {
+
             System.out.print("> ");
             // read message from user
             String message = scanner.nextLine();
@@ -180,19 +183,18 @@ public class Client  {
         public void run() {
             while(true) {
                 try {
-                    // read the message form the input datastream
-                    String message = (String) sInput.readUTF();
+                    // read the message form the input dataStream
+                    String message = sInput.readUTF();
                     // print the message
                     System.out.println(message);
-                    /*
+/*
                     if(message.equals("choose another username: ")) {
                         Scanner scanner = new Scanner(System.in);
                         username = scanner.nextLine();
-                        ChatMessage chatMessage = new ChatMessage(ChatMessage.MESSAGE, username );
-                        sendMessage(chatMessage);
+                        sendMessage(username);
                     }
 
-                     */
+ */
 
                     System.out.print("> ");
                 }

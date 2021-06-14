@@ -17,7 +17,7 @@ public class Server {
     private final int port;
     // to check if server is running
     private boolean keepGoing;
-    private int maxCapacity = 10;
+    private int maxCapacity;
     // notification
     private final String notification = " *** ";
     private final GameManager gameManager;
@@ -35,7 +35,7 @@ public class Server {
         // to display hh:mm:ss
         simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         // an ArrayList to keep the list of the Client
-        clientThreads = new ArrayList<ClientThread>();
+        clientThreads = new ArrayList<>();
         this.maxCapacity = maxCapacity;
         gameManager = new GameManager(this.maxCapacity, clientThreads, this);
     }
@@ -54,10 +54,6 @@ public class Server {
 
     public void setActiveClients(ArrayList<ClientThread> activeClients) {
         this.activeClients = activeClients;
-    }
-
-    public void setMaxCapacity(int maxCapacity) {
-        this.maxCapacity = maxCapacity;
     }
 
     public void setWaitingToGo(boolean waitingToGo) {
@@ -131,6 +127,7 @@ public class Server {
             new Socket("localhost", port);
         }
         catch(Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -164,7 +161,7 @@ public class Server {
 
     }
 
-    public synchronized boolean sendMsgToClient(String message, ClientThread clientThread){
+    public synchronized void sendMsgToClient(String message, ClientThread clientThread){
         String time = simpleDateFormat.format(new Date());
         String messageLf = time + " | " + message + "\n";
         System.out.print(messageLf);
@@ -174,9 +171,7 @@ public class Server {
             display("Disconnected Client " + clientThread.username + " removed from list.");
         }
 
-        return true;
-
-
+        //return true;
     }
 
     // if client sent LOGOUT message to exit
@@ -207,7 +202,7 @@ public class Server {
         // start server on port 1500 unless a PortNumber is specified
 
         Scanner scanner = new Scanner(System.in);
-        int portNumber = 8686, serverCapacity = 10;
+        int portNumber, serverCapacity;
 
         System.out.print("enter max capacity of server: ");
         serverCapacity = scanner.nextInt();
@@ -223,16 +218,15 @@ public class Server {
 
     // One instance of this thread will run for each client
     class ClientThread extends Thread {
-        private final Server server;
         // the socket to get messages from client
         Socket socket;
         DataInputStream sInput;
         DataOutputStream sOutput;
-        // my unique id (easier for deconnection)
+        // my unique id (easier for disconnection)
         int id;
         // the Username of the Client
         String username;
-        // message object to recieve message and its type
+        // message object to receive message and its type
         String message;
         // timestamp
         String date;
@@ -242,7 +236,6 @@ public class Server {
 
         // Constructor
         ClientThread(Server server, Socket socket) {
-            this.server = server;
             // a unique id
             id = ++uniqueId;
             this.socket = socket;
@@ -253,27 +246,29 @@ public class Server {
                 sOutput = new DataOutputStream(socket.getOutputStream());
                 sInput = new DataInputStream(socket.getInputStream());
                 // read the username
-                username = (String) sInput.readUTF();
+                username = sInput.readUTF();
 
                 for(ClientThread clientThread : clientThreads){
                     if(username.equals(clientThread.getUsername())){
-                        StringBuilder stringBuilder = new StringBuilder();
-                        stringBuilder.append(username);
-                        stringBuilder.append(uniqueId);
-                        username = stringBuilder.toString();
+                        username = username +
+                                uniqueId +
+                                uniqueId / 2 +
+                                uniqueId * 3;
                     }
                 }
 
-                /*
+
+/*
                 for(int i = 0 ; i < clientThreads.size() ; i++){
                     if(username.equals(clientThreads.get(i).getUsername())){
                         writeMsg("choose another username: ");
-                        cm =(ChatMessage) sInput.readObject();
-                        username = cm.getMessage();
+                        username = sInput.readUTF();
                         i = 0;
                     }
                 }
-                 */
+
+ */
+
 
 
                 server.broadcast(notification + username + " has joined the chat room." + notification, getClientThreads());
@@ -282,14 +277,6 @@ public class Server {
                 return;
             }
             date = new Date().toString() + "\n";
-        }
-
-        public boolean isWait() {
-            return isWait;
-        }
-
-        public boolean isCanTalk() {
-            return canTalk;
         }
 
         public boolean isLastMoment() {
@@ -331,10 +318,6 @@ public class Server {
 
         public void setVote(ClientThread vote) {
             this.vote = vote;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
         }
 
         public void setLastMoment(boolean lastMoment) {
@@ -391,9 +374,9 @@ public class Server {
                 if(message.equalsIgnoreCase("!LOGOUT")){
                     //display(username + " disconnected with a LOGOUT message.");
                     gameManager.disconnected(this);
-                    keepGoing = false;
+                    //keepGoing = false;
                     break;
-                }else if(message.equalsIgnoreCase("!WHOISIN")){
+                }else if(message.equalsIgnoreCase("!WhoIsIn")){
                     writeMsg("List of the users connected at " + simpleDateFormat.format(new Date()) + "\n");
                     // send list of active clients
                     for (int i = 0; i < clientThreads.size(); ++i) {
@@ -480,15 +463,18 @@ public class Server {
             try {
                 if (sOutput != null) sOutput.close();
             } catch (Exception e) {
+                System.out.println("Error closing data output stream");
             }
             try {
                 if (sInput != null) sInput.close();
             } catch (Exception e) {
+                System.out.println("Error closing data input stream");
             }
-            ;
+
             try {
                 if (socket != null) socket.close();
             } catch (Exception e) {
+                System.out.println("Error closing socket");
             }
         }
 
