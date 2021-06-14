@@ -19,8 +19,8 @@ import java.util.HashMap;
 // show voters +
 // Invulnerable result for all +
 
-// ready!
-// username
+// ready! +-
+// username +-
 // vote end early if someone dead logout
 
 
@@ -38,7 +38,7 @@ public class GameManager {
     private int readyToGo = 0;
     private int targetToGo = 0;
 
-    private final int firstDayChatTime = 10, mafiaNightTime = 30, citizenNightTime = 20, dayChatTime = 300;
+    private final int firstDayChatTime = 10, mafiaNightTime = 1, citizenNightTime = 1, dayChatTime = 300;
 
     private boolean isGodFatherShot = false, isLectorDoctorHill = false, isDoctorHill = false,
             isDetectiveAttempt = false, isProfessionalShot = false,
@@ -226,7 +226,6 @@ public class GameManager {
             }
         }
     }
-
 
 /*
     public synchronized void notifySomeClients(ArrayList<Server.ClientThread> cts) {
@@ -602,6 +601,27 @@ public class GameManager {
         }
     }
 
+    public void collectDeActives(){
+        int deActiveDaysToKick = 3;
+
+        for(Server.ClientThread ct : server.getClientThreads()){
+            Player player = connectClientToRole.get(ct);
+            if(player.isAlive()){
+                if(ct.getVote() == null){
+                    ct.addDeActiveness();
+                    ct.writeMsg("God: you were deActive for " + ct.getDeActiveInARow() + " day(s)");
+                }else{
+                    ct.setDeActiveInARow(0);
+                }
+                if(ct.getDeActiveInARow() >= deActiveDaysToKick){
+                    ct.writeMsg("God: you are kicked from game for because you were deActive for 3 days in a row");
+                    player.setAlive(false);
+                    presentLastMoment(ct);
+                }
+            }
+        }
+    }
+
     public void mafiaNight(){
 
         server.broadcast("God: Night begins" , server.getClientThreads());
@@ -841,21 +861,19 @@ public class GameManager {
         readyToGo += 1;
     }
 
-    public void waitUntilFull(int targetToGo){
+    public void waitUntilFull(){
 
         server.broadcast("God: say [!ready] to continue", server.getClientThreads());
         server.setWaitingToGo(true);
 
         while(true){
             sleep(2);
-            if (readyToGo >= targetToGo ) {
+            if (readyToGo >= server.getMaxCapacity() - deadClients.size() ) {
                 readyToGo = 0;
                 server.setWaitingToGo(false);
                 break;
             }
         }
-
-        System.out.println("gd4g65gdg65d4g6g4d");
 
         for(Server.ClientThread ct : server.getClientThreads()){
             ct.setReady(false);
@@ -925,7 +943,7 @@ public class GameManager {
 
     public void firstDay(){
         firstDayChat();
-        waitUntilFull(server.getClientThreads().size() - deadClients.size());
+        waitUntilFull();
 
         //day chat
         server.broadcast("God: chat for " + firstDayChatTime + " seconds!", server.getClientThreads());
@@ -1060,6 +1078,8 @@ public class GameManager {
             if(!votingHasBeenCanceled){
                 applyVoting();
             }
+
+            collectDeActives();
             waitAllClients();
 
             if(checkEnd()){

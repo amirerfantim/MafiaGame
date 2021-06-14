@@ -231,8 +231,9 @@ public class Server {
         // timestamp
         String date;
         private boolean isWait = false, isLastMoment = false,isReady = false, canTalk = true ;
-        private ClientThread vote;
+        private ClientThread vote = null;
         private ArrayList<ClientThread> votes = new ArrayList<>();
+        private int deActiveInARow = 0;
 
         // Constructor
         ClientThread(Server server, Socket socket) {
@@ -296,6 +297,10 @@ public class Server {
             return isReady;
         }
 
+        public int getDeActiveInARow() {
+            return deActiveInARow;
+        }
+
         public void setCanTalk(boolean canTalk) {
             this.canTalk = canTalk;
         }
@@ -316,6 +321,11 @@ public class Server {
             isReady = ready;
         }
 
+        public void setDeActiveInARow(int deActiveInARow) {
+            this.deActiveInARow = deActiveInARow;
+        }
+
+
         public void setVote(ClientThread vote) {
             this.vote = vote;
         }
@@ -326,6 +336,10 @@ public class Server {
 
         public void addAVote(Server.ClientThread ct){
             votes.add(ct);
+        }
+
+        public void addDeActiveness(){
+            deActiveInARow +=1;
         }
 
         public synchronized void run() {
@@ -413,7 +427,6 @@ public class Server {
                                 }
                             }
                         }
-                        /*
                         else if (voteString[0].equalsIgnoreCase("!VOTE")) {
                             if (voteString[1].charAt(0) == '@') {
                                 gameManager.vote(voteString[1].substring(1), this);
@@ -426,10 +439,7 @@ public class Server {
                             }else{
                                 writeMsg("you said you are ready before!");
                             }
-                        }
-
-                         */
-                        else {
+                        } else {
                             boolean confirmation = broadcast(username + ": " + message, activeClients);
                             if (!confirmation) {
                                 String msg = notification + "Sorry. No such user exists." + notification;
@@ -438,11 +448,11 @@ public class Server {
                         }
 
                     }
-                } if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment && !waitingToGo) {
+                }else if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment && !waitingToGo) {
                     if (voteString[1].charAt(0) == '@') {
                         gameManager.vote(voteString[1].substring(1), this);
                     }
-                } if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
+                }else if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
                     if(!isReady) {
                         gameManager.ready();
                         isReady = true;
