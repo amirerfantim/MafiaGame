@@ -241,7 +241,6 @@ public class GameManager {
  */
     public void disconnected(Server.ClientThread ct){
         if(connectClientToRole.get(ct).isAlive()){
-            disconnectedAliveClients += 1;
             deadClients.add(ct);
         }
     }
@@ -862,7 +861,7 @@ public class GameManager {
     }
 
     public void ready() {
-        readyToGo++;
+        readyToGo += 1;
     }
 
     public void waitUntilFull(int targetToGo){
@@ -871,13 +870,18 @@ public class GameManager {
         server.setWaitingToGo(true);
 
         while(true){
-            sleep(1);
-            if (readyToGo == targetToGo) {
-
+            sleep(2);
+            if (readyToGo >= targetToGo ) {
                 readyToGo = 0;
                 server.setWaitingToGo(false);
                 break;
             }
+        }
+
+        System.out.println("gd4g65gdg65d4g6g4d");
+
+        for(Server.ClientThread ct : server.getClientThreads()){
+            ct.setReady(false);
         }
     }
 
@@ -930,10 +934,12 @@ public class GameManager {
 
         while(System.currentTimeMillis() < end){
             sleep(1);
-            if(readyToGo >= server.getMaxCapacity() - deadClients.size() - disconnectedAliveClients){
+            if(readyToGo >= server.getMaxCapacity() - deadClients.size()){
                 server.broadcast("God: Day ended early" , server.getClientThreads());
+                sleep(2);
                 break;
             }
+
         }
         server.broadcast("God: Day ends" , server.getClientThreads());
         waitAllClients();
@@ -942,7 +948,7 @@ public class GameManager {
 
     public void firstDay(){
         firstDayChat();
-        //waitUntilFull(server.getClientThreads().size());
+        waitUntilFull(server.getClientThreads().size() - deadClients.size());
 
         //day chat
         server.broadcast("God: chat for " + firstDayChatTime + " seconds!", server.getClientThreads());
@@ -1020,22 +1026,6 @@ public class GameManager {
         }
     }
 
-    /*
-    public void getReady(int target){
-        server.broadcast("God: say [ready] to continue");
-        targetToGo = target;
-        server.setWaitingToGo(true);
-        firstDayChat();
-        while(true){
-            sleep(1);
-            if (readyToGo == server.getMaxCapacity()) {
-                readyToGo = 0;
-                server.setWaitingToGo(false);
-                break;
-            }
-        }
-    }
-     */
 
     public synchronized void game() {
 
@@ -1114,12 +1104,14 @@ public class GameManager {
             }
 
         }
-
+/*
         sleep(3);
         for(Server.ClientThread ct : server.getClientThreads()){
             ct.setKeepGoing(false);
         }
         server.setKeepGoing(false);
+
+ */
 
     }
 

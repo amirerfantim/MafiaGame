@@ -60,15 +60,12 @@ public class Server {
         this.maxCapacity = maxCapacity;
     }
 
-    public void setKeepGoing(boolean keepGoing) {
-        this.keepGoing = keepGoing;
-    }
-
     public void setWaitingToGo(boolean waitingToGo) {
         this.waitingToGo = waitingToGo;
     }
 
     public void start() {
+        keepGoing = true;
 
         //create socket server and wait for connection requests
         try
@@ -242,10 +239,8 @@ public class Server {
         private boolean isWait = false, isLastMoment = false,isReady = false, canTalk = true ;
         private ClientThread vote;
         private ArrayList<ClientThread> votes = new ArrayList<>();
-        private boolean keepGoing = true;
 
         // Constructor
-
         ClientThread(Server server, Socket socket) {
             this.server = server;
             // a unique id
@@ -301,6 +296,7 @@ public class Server {
             return isLastMoment;
         }
 
+
         public ClientThread getVote() {
             return vote;
         }
@@ -321,10 +317,6 @@ public class Server {
             this.votes = votes;
         }
 
-        public void setKeepGoing(boolean keepGoing) {
-            this.keepGoing = keepGoing;
-        }
-
         public String getUsername() {
             return username;
         }
@@ -333,12 +325,12 @@ public class Server {
             isWait = wait;
         }
 
-        public void setVote(ClientThread vote) {
-            this.vote = vote;
-        }
-
         public void setReady(boolean ready) {
             isReady = ready;
+        }
+
+        public void setVote(ClientThread vote) {
+            this.vote = vote;
         }
 
         public void setUsername(String username) {
@@ -355,6 +347,7 @@ public class Server {
 
         public synchronized void run() {
 
+            boolean keepGoing = true;
 
             while (keepGoing) {
 
@@ -436,7 +429,9 @@ public class Server {
                                     gameManager.mayorAttempt(this);
                                 }
                             }
-                        } else if (voteString[0].equalsIgnoreCase("!VOTE")) {
+                        }
+                        /*
+                        else if (voteString[0].equalsIgnoreCase("!VOTE")) {
                             if (voteString[1].charAt(0) == '@') {
                                 gameManager.vote(voteString[1].substring(1), this);
                             }
@@ -448,9 +443,11 @@ public class Server {
                             }else{
                                 writeMsg("you said you are ready before!");
                             }
-                        }else {
-                            boolean confirmation = broadcast(username + ": " + message, activeClients);
+                        }
 
+                         */
+                        else {
+                            boolean confirmation = broadcast(username + ": " + message, activeClients);
                             if (!confirmation) {
                                 String msg = notification + "Sorry. No such user exists." + notification;
                                 writeMsg(msg);
@@ -458,11 +455,11 @@ public class Server {
                         }
 
                     }
-                } else if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment) {
+                } if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment && !waitingToGo) {
                     if (voteString[1].charAt(0) == '@') {
                         gameManager.vote(voteString[1].substring(1), this);
                     }
-                } else if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
+                } if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
                     if(!isReady) {
                         gameManager.ready();
                         isReady = true;
