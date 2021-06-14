@@ -559,7 +559,8 @@ public class GameManager {
                 if (usernameToFind.equals(ct.getUsername())) {
                     found = true;
                     if(!isClientDied(ct)) {
-                        server.broadcast("God: you voted " + ct.getUsername() , server.getActiveClients());
+                        server.broadcast("God: " + currentCt.getUsername() + " voted " + ct.getUsername()
+                                , server.getClientThreads());
                         currentCt.setVote(ct);
                     }else{
                         server.broadcast("God: this client is dead!", server.getActiveClients());

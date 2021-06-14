@@ -435,7 +435,8 @@ public class Server {
                             if(!isReady) {
                                 gameManager.ready();
                                 isReady = true;
-                                writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                                broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
+                                        , getClientThreads());
                             }else{
                                 writeMsg("you said you are ready before!");
                             }
@@ -456,7 +457,8 @@ public class Server {
                     if(!isReady) {
                         gameManager.ready();
                         isReady = true;
-                        writeMsg(gameManager.getReadyToGo() + " number of players are ready so far");
+                        broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
+                                ,getClientThreads());
                     }else{
                         writeMsg("you said you are ready before!");
                     }
