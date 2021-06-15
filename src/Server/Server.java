@@ -2,6 +2,7 @@ package Server;
 
 import java.io.*;
 import java.net.*;
+import java.security.cert.CertificateNotYetValidException;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
@@ -24,8 +25,10 @@ public class Server {
     private boolean waitingToGo = false;
     private ArrayList<ClientThread> activeClients;
 
-
-
+    public static final String	RED					= "\u001B[31m";
+    public static final String	BLUE				= "\u001B[34m";
+    public static final String	CYAN				= "\u001B[36m";
+    public static final String  RESET               = "\u001B[0m";
 
     //constructor that receive the port to listen to for connection as parameter
 
@@ -86,7 +89,7 @@ public class Server {
                 //t.start();
             }
 
-            broadcast("Server is full -> Let's go", getClientThreads());
+            broadcast(CYAN + "Server is full -> Let's go" +RESET, getClientThreads());
 
             gameManager.game();
             /*
@@ -408,22 +411,15 @@ public class Server {
                         Server.ClientThread ct = clientThreads.get(i);
                         writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                     }
-                }else if(splitMessage[0].equalsIgnoreCase("!USERNAME")){
-                    if(checkUsername(splitMessage[1])){
-                        broadcast("God: " + username + " changed to " + splitMessage[1], getClientThreads());
-                        username = splitMessage[1];
-                    }else{
-                        writeMsg("there is a " + splitMessage[1] + " in the game");
-                    }
                 }else if(canTalk) {
                     if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
                         if(!isReady) {
                             gameManager.ready();
                             isReady = true;
-                            broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
-                                    , getClientThreads());
+                            broadcast(BLUE + gameManager.getReadyToGo()
+                                            + " number of players are ready so far" + RESET, getClientThreads());
                         }else{
-                            writeMsg("you said you are ready before!");
+                            writeMsg(RED + "you said you are ready before!" + RESET);
                         }
                     }else if (!waitingToGo && !isLastMoment) {
                         if (message.length() > 0 && message.charAt(0) == '@') {
@@ -458,7 +454,7 @@ public class Server {
                         } else {
                             boolean confirmation = broadcast(username + ": " + message, activeClients);
                             if (!confirmation) {
-                                String msg = notification + "Sorry. No such user exists." + notification;
+                                String msg = RED + notification + "Sorry. No such user exists." + notification + RESET;
                                 writeMsg(msg);
                             }
                         }
@@ -472,8 +468,8 @@ public class Server {
                     if(!isReady) {
                         gameManager.ready();
                         isReady = true;
-                        broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
-                                ,getClientThreads());
+                        broadcast(BLUE + gameManager.getReadyToGo() + " number of players are ready so far"
+                                        + RESET, getClientThreads());
                     }else{
                         writeMsg("you said you are ready before!");
                     }
@@ -531,7 +527,8 @@ public class Server {
                 display(notification + "Error sending message to " + username + notification);
                 gameManager.disconnected(this);
                 clientThreads.remove(this);
-                broadcast("Disconnected Client " + username + " removed from list.", clientThreads);
+                broadcast(RED + "Disconnected Client " + username + " removed from list." + RESET
+                        , clientThreads);
                 display(e.toString());
             }
 

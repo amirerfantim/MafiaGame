@@ -18,10 +18,9 @@ import java.util.HashMap;
 // can skip day +
 // show voters +
 // Invulnerable result for all +
-
-// ready! +-
-// username +-
-// vote end early if someone dead logout
+// ready! +
+// username +
+// vote end early if someone dead logout +
 
 
 public class GameManager {
@@ -47,6 +46,16 @@ public class GameManager {
     private int numberOfInvulnerableAttempt = 0;
     private Server.ClientThread protectedByLector = null;
     private boolean votingHasBeenCanceled = false, keepGoing = true;
+
+    public static final String	BLACK				= "\u001B[30m";
+    public static final String	RED					= "\u001B[31m";
+    public static final String	GREEN				= "\u001B[32m";
+    public static final String	YELLOW				= "\u001B[33m";
+    public static final String	BLUE				= "\u001B[34m";
+    public static final String	MAGENTA				= "\u001B[35m";
+    public static final String	CYAN				= "\u001B[36m";
+    public static final String	WHITE				= "\u001B[37m";
+    public static final String  RESET               = "\u001B[0m";
 
 
     public GameManager(int numberOfPlayers, ArrayList<Server.ClientThread> clientThreads, Server server) {
@@ -76,25 +85,25 @@ public class GameManager {
 
         switch (numberOfCitizens) {
             case 7: {
-                players.add(new Mayor());
+                players.add(new SimpleCitizen());
             }
             case 6: {
-                players.add(new Professional());
+                players.add(new Mayor());
             }
             case 5: {
-                players.add(new Psychologist());
+                players.add(new Professional());
             }
             case 4: {
-                players.add(new Invulnerable());
+                players.add(new Psychologist());
             }
             case 3: {
-                players.add(new Detective());
+                players.add(new Invulnerable());
             }
             case 2: {
-                players.add(new Doctor());
+                players.add(new Detective());
             }
             case 1: {
-                players.add(new SimpleCitizen());
+                players.add(new Doctor());
                 break;
             }
             default:{
@@ -157,33 +166,33 @@ public class GameManager {
             Player curPlayer = connectClientToRole.get(clientThread);
 
             if (curPlayer instanceof SimpleMafia) {
-                server.sendMsgToClient("God : You are Simple Mafia", clientThread);
+                server.sendMsgToClient(BLACK + "God : You are Simple Mafia" + RESET, clientThread);
                 showMafiaTeam(clientThread);
             } else if (curPlayer instanceof GodFather) {
-                server.sendMsgToClient("God : You are God Father", clientThread);
+                server.sendMsgToClient(BLACK + "God : You are God Father" + RESET, clientThread);
                 showMafiaTeam(clientThread);
             } else if (curPlayer instanceof LectorDoctor) {
-                server.sendMsgToClient("God : You are Lector Doctor", clientThread);
+                server.sendMsgToClient(BLACK + "God : You are Lector Doctor" + RESET, clientThread);
                 showMafiaTeam(clientThread);
             } else if (curPlayer instanceof SimpleCitizen) {
-                server.sendMsgToClient("God : You are Simple citizen", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Simple citizen" + RESET, clientThread);
             } else if (curPlayer instanceof Doctor) {
-                server.sendMsgToClient("God : You are Doctor", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Doctor" + RESET, clientThread);
             } else if (curPlayer instanceof Detective) {
-                server.sendMsgToClient("God : You are Detective", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Detective" + RESET, clientThread);
             } else if (curPlayer instanceof Invulnerable) {
-                server.sendMsgToClient("God : You are Invulnerable", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Invulnerable" + RESET, clientThread);
             } else if (curPlayer instanceof Mayor) {
-                server.sendMsgToClient("God : You are Mayor", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Mayor" + RESET, clientThread);
                 for(Server.ClientThread ct : server.getClientThreads()){
                     if(connectClientToRole.get(ct) instanceof Doctor){
                         server.sendMsgToClient("God : " + ct.getUsername() + " is Doctor!", clientThread);
                     }
                 }
             } else if (curPlayer instanceof Professional) {
-                server.sendMsgToClient("God : You are Professional", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Professional" + RESET, clientThread);
             } else if (curPlayer instanceof Psychologist) {
-                server.sendMsgToClient("God : You are Psychologist", clientThread);
+                server.sendMsgToClient(BLUE + "God : You are Psychologist" + RESET, clientThread);
             }
 
 
@@ -194,12 +203,12 @@ public class GameManager {
     public void showMafiaTeam(Server.ClientThread ctToSend) {
         int row = 1;
 
-        server.sendMsgToClient("The Mafia Team is: ", ctToSend);
+        server.sendMsgToClient(YELLOW + "The Mafia Team is: " + RESET, ctToSend);
 
         for (Server.ClientThread clientThread : clientThreads) {
             if (connectClientToRole.get(clientThread) instanceof MafiaTeam) {
-                server.sendMsgToClient(row + ": " + clientThread.getUsername()
-                        + " -> " + connectClientToRole.get(clientThread), ctToSend);
+                server.sendMsgToClient(YELLOW + row + ": " + clientThread.getUsername()
+                        + " -> " + connectClientToRole.get(clientThread) + RESET, ctToSend);
                 row++;
             }
         }
@@ -273,7 +282,7 @@ public class GameManager {
                     player = connectClientToRole.get(ct);
                     if(!isClientDied(ct)) {
                         if (player instanceof CitizenTeam) {
-                            server.broadcast("God: Nice Shot!", server.getActiveClients());
+                            server.broadcast(GREEN + "God: Nice Shot!" + RESET, server.getActiveClients());
                             isGodFatherShot = true;
                             player.setAlive(false);
 
@@ -285,17 +294,20 @@ public class GameManager {
                             }
 
                         } else {
-                            server.broadcast("God: you cant shot a mafia!", server.getActiveClients());
+                            server.broadcast(RED + "God: you cant shot a mafia!" + RESET
+                                    , server.getActiveClients());
                         }
                     }else {
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
                 }
             }if(player == null) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you shot before", server.getActiveClients());
+            server.broadcast(RED + "God: you shot before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -318,32 +330,35 @@ public class GameManager {
                             if(player instanceof LectorDoctor ){
                                 if(!isLectorHillItself) {
                                     isLectorHillItself = true;
-                                    server.broadcast("God: you protected yourself",
+                                    server.broadcast(GREEN + "God: you protected yourself" + RESET,
                                             server.getActiveClients());
                                     isLectorDoctorHill = true;
                                     protectedByLector = ct;
                                 }else{
-                                    server.broadcast("God: you hill yourself once",
+                                    server.broadcast(RED + "God: you hill yourself once" + RESET,
                                             server.getActiveClients());
                                 }
                             }else{
-                                server.broadcast("God: you protected " + ct.getUsername(),
+                                server.broadcast(GREEN + "God: you protected " + ct.getUsername() + RESET,
                                         server.getActiveClients());
                                 isLectorDoctorHill = true;
                                 protectedByLector = ct;
                             }
                         } else {
-                            server.broadcast("God: you cant hill a citizen!", server.getActiveClients());
+                            server.broadcast(RED + "God: you cant hill a citizen!" + RESET
+                                    , server.getActiveClients());
                         }
                     }else{
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
                 }
             }if(player == null) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you hill before", server.getActiveClients());
+            server.broadcast(RED + "God: you hill before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -365,29 +380,32 @@ public class GameManager {
                         if(player instanceof Doctor){
                             if(!isDoctorHillItself){
                                 isDoctorHillItself = true;
-                                server.broadcast("God: you protected yourself",
+                                server.broadcast(GREEN + "God: you protected yourself" + RESET,
                                         server.getActiveClients());
                                 isDoctorHill = true;
+                                player.setAlive(true);
                             }else{
-                                server.broadcast("God: you hill yourself once",
+                                server.broadcast(RED + "God: you hill yourself once" + RESET,
                                         server.getActiveClients());
                             }
 
                         }else {
                             player.setAlive(true);
-                            server.broadcast("God: you protected " + ct.getUsername(), server.getActiveClients());
+                            server.broadcast(GREEN + "God: you protected " + ct.getUsername() + RESET
+                                    , server.getActiveClients());
                             isDoctorHill = true;
                         }
                     }else{
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
-
                 }
             }if(player == null) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you hill before", server.getActiveClients());
+            server.broadcast(RED + "God: you hill before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -408,22 +426,24 @@ public class GameManager {
 
                     if(!isClientDied(ct)) {
                         if (player instanceof CitizenTeam || player instanceof GodFather) {
-                            server.broadcast("God: " + ct.getUsername() + " is in Citizen's team"
-                                    , server.getActiveClients());
+                            server.broadcast(GREEN + "God: " + ct.getUsername()
+                                            + " is in Citizen's team" + RESET, server.getActiveClients());
                         } else {
-                            server.broadcast("God: " + ct.getUsername() + " is in Mafia's team"
+                            server.broadcast(GREEN + "God: " + ct.getUsername() + " is in Mafia's team" + RESET
                                     , server.getActiveClients());
                         }
                         isDetectiveAttempt = true;
                     }else{
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
                 }
             }if(player == null) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you attempted before", server.getActiveClients());
+            server.broadcast(RED + "God: you attempted before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -443,7 +463,7 @@ public class GameManager {
                 if (usernameToFind.equals(ct.getUsername())) {
                     player = connectClientToRole.get(ct);
                     if(!isClientDied(ct)) {
-                        server.broadcast("God: Nice Shot!", server.getActiveClients());
+                        server.broadcast(GREEN + "God: Nice Shot!" + RESET, server.getActiveClients());
                         isProfessionalShot = true;
                         if (player instanceof MafiaTeam) {
                             player.setAlive(false);
@@ -454,14 +474,16 @@ public class GameManager {
                             connectClientToRole.get(professionalCT).setAlive(false);
                         }
                     }else{
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
                 }
             }if(player == null) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you shot before", server.getActiveClients());
+            server.broadcast(RED + "God: you shot before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -481,19 +503,22 @@ public class GameManager {
                 if (usernameToFind.equals(ct.getUsername())) {
                     found = true;
                     if(!isClientDied(ct)) {
-                        server.broadcast("God: Well Done!", server.getActiveClients());
-                        server.broadcast("God: " + ct.getUsername() + " muted!", server.getClientThreads());
+                        server.broadcast(GREEN + "God: Well Done!" + RESET, server.getActiveClients());
+                        server.broadcast(CYAN + "God: " + ct.getUsername() + " muted!" + RESET
+                                , server.getClientThreads());
                         isPsychologistMuted = true;
                         ct.setCanTalk(false);
                     }else{
-                        server.broadcast("God: Player is already dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: Player is already dead!" + RESET
+                                , server.getActiveClients());
                     }
                 }
             }if(!found) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you attempt before", server.getActiveClients());
+            server.broadcast(RED + "God: you attempt before" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -509,16 +534,17 @@ public class GameManager {
 
         if(numberOfInvulnerableAttempt < 2) {
             if (!isInvulnerableAttempt) {
-                server.broadcast("God: Done! God will say the roles tomorrow" ,
+                server.broadcast(GREEN + "God: Done! God will say the roles tomorrow" + RESET,
                         server.getActiveClients());
                 numberOfInvulnerableAttempt += 1;
                 isInvulnerableAttempt = true;
 
             } else {
-                server.broadcast("God: you attempt before", server.getActiveClients());
+                server.broadcast(RED + "God: you attempt before" + RESET, server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you have reached your limit ( 2times )", server.getActiveClients());
+            server.broadcast(RED + "God: you have reached your limit ( 2times )" + RESET
+                    , server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -535,10 +561,10 @@ public class GameManager {
         if (!isMayorAttempt) {
             votingHasBeenCanceled = true;
             isMayorAttempt = true;
-            server.broadcast("God: Voting canceled", server.getClientThreads());
+            server.broadcast(CYAN + "God: Voting canceled" + RESET, server.getClientThreads());
 
         } else {
-            server.broadcast("God: you attempt before", server.getActiveClients());
+            server.broadcast(RED + "God: you attempt before" + RESET, server.getActiveClients());
         }
 
 
@@ -559,18 +585,19 @@ public class GameManager {
                 if (usernameToFind.equals(ct.getUsername())) {
                     found = true;
                     if(!isClientDied(ct)) {
-                        server.broadcast("God: " + currentCt.getUsername() + " voted " + ct.getUsername()
-                                , server.getClientThreads());
+                        server.broadcast(BLUE + "God: " + currentCt.getUsername()
+                                        + " voted " + ct.getUsername() + RESET, server.getClientThreads());
                         currentCt.setVote(ct);
                     }else{
-                        server.broadcast("God: this client is dead!", server.getActiveClients());
+                        server.broadcast(RED + "God: this client is dead!" + RESET, server.getActiveClients());
                     }
                 }
             }if(!found) {
-                server.broadcast("God: there isn't any client with this username", server.getActiveClients());
+                server.broadcast(RED + "God: there isn't any client with this username" + RESET
+                        , server.getActiveClients());
             }
         }else{
-            server.broadcast("God: you passed the voting", server.getActiveClients());
+            server.broadcast(RED + "God: you passed the voting" + RESET, server.getActiveClients());
         }
 
         server.setActiveClients(activeClients);
@@ -591,12 +618,12 @@ public class GameManager {
         StringBuilder string = new StringBuilder();
 
         for(Server.ClientThread clientThread : server.getClientThreads()){
-            server.broadcast("People who voted " + clientThread.getUsername() + ": "
+            server.broadcast(CYAN + "People who voted " + clientThread.getUsername() + ": " + RESET
                     , server.getClientThreads());
             for(Server.ClientThread vote : clientThread.getVotes()){
                 string.append(vote.getUsername()).append(", ");
             }
-            server.broadcast(string.toString(), server.getClientThreads());
+            server.broadcast(BLUE + string.toString() + RESET, server.getClientThreads());
             string = new StringBuilder();
             sleep(1);
         }
@@ -610,12 +637,13 @@ public class GameManager {
             if(player.isAlive()){
                 if(ct.getVote() == null){
                     ct.addDeActiveness();
-                    ct.writeMsg("God: you were deActive for " + ct.getDeActiveInARow() + " day(s)");
+                    ct.writeMsg(YELLOW + "God: you were deActive for " + ct.getDeActiveInARow() + " day(s)" + RESET);
                 }else{
                     ct.setDeActiveInARow(0);
                 }
                 if(ct.getDeActiveInARow() >= deActiveDaysToKick){
-                    ct.writeMsg("God: you are kicked from game for because you were deActive for 3 days in a row");
+                    ct.writeMsg(RED + "God: you are kicked from game for because you were deActive for 3 days in a row"
+                            + RESET);
                     player.setAlive(false);
                     presentLastMoment(ct);
                 }
@@ -625,9 +653,9 @@ public class GameManager {
 
     public void mafiaNight(){
 
-        server.broadcast("God: Night begins" , server.getClientThreads());
-        server.broadcast("God: Mafia Team chat & kill some one within " + mafiaNightTime + " seconds!"
-                , server.getClientThreads());
+        server.broadcast(CYAN + "God: Night begins" + RESET , server.getClientThreads());
+        server.broadcast(CYAN + "God: Mafia Team chat & kill some one within " + mafiaNightTime + " seconds!"
+                        + RESET, server.getClientThreads());
 
         mafiaClients = new ArrayList<>();
 
@@ -643,14 +671,14 @@ public class GameManager {
 
         if(mafiaClients.size() > 0) {
             server.setActiveClients(mafiaClients);
-            server.broadcast("God: to kill someone, GodFather send -> [ @<username> ] ",
+            server.broadcast(MAGENTA + "God: to kill someone, GodFather send -> [ @<username> ] " + RESET,
                     server.getActiveClients());
-            server.broadcast("God: to hill someone, LectorDoctor send -> [ @<username> ] ",
+            server.broadcast(MAGENTA + "God: to hill someone, LectorDoctor send -> [ @<username> ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(mafiaNightTime);
-        server.broadcast("God: Mafias go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Mafias go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         isGodFatherShot = false;
         isLectorDoctorHill =false;
@@ -660,8 +688,8 @@ public class GameManager {
 
     public void doctorNight(){
 
-        server.broadcast("God: Doctor wakeUp & hill someone within " + citizenNightTime + " seconds!"
-                , server.getClientThreads());
+        server.broadcast(CYAN + "God: Doctor wakeUp & hill someone within " + citizenNightTime + " seconds!"
+                        + RESET, server.getClientThreads());
 
         ArrayList<Server.ClientThread> doctor = new ArrayList<>();
 
@@ -677,11 +705,12 @@ public class GameManager {
 
         if(doctor.size() > 0) {
             server.setActiveClients(doctor);
-            server.broadcast("God: to hill someone, send -> [ @<username> ] ", server.getActiveClients());
+            server.broadcast(MAGENTA + "God: to hill someone, send -> [ @<username> ] " + RESET
+                    , server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: Doctor go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Doctor go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         isDoctorHill = false;
         server.setActiveClients(server.getClientThreads());
@@ -689,7 +718,7 @@ public class GameManager {
 
     public void detectiveNight(){
 
-        server.broadcast("God: Detective wakeUp -> you have " + citizenNightTime + " seconds!"
+        server.broadcast(CYAN + "God: Detective wakeUp -> you have " + citizenNightTime + " seconds!" + RESET
                 , server.getClientThreads());
 
         ArrayList<Server.ClientThread> detective = new ArrayList<>();
@@ -706,12 +735,12 @@ public class GameManager {
 
         if(detective.size() > 0) {
             server.setActiveClients(detective);
-            server.broadcast("God: to know a role of someone, send -> [ @<username> ] ",
+            server.broadcast(MAGENTA + "God: to know a role of someone, send -> [ @<username> ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: Detective go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Detective go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         isDetectiveAttempt = false;
         server.setActiveClients(server.getClientThreads());
@@ -719,7 +748,7 @@ public class GameManager {
 
     public void professionalNight(){
 
-        server.broadcast("God: Professional wakeUp you have -> " + citizenNightTime + " seconds!"
+        server.broadcast(CYAN + "God: Professional wakeUp you have -> " + citizenNightTime + " seconds!" + RESET
                 , server.getClientThreads());
 
         ArrayList<Server.ClientThread> professional = new ArrayList<>();
@@ -736,12 +765,12 @@ public class GameManager {
 
         if(professional.size() > 0) {
             server.setActiveClients(professional);
-            server.broadcast("God: if you want to shoot someone, send -> [ @<username> ] ",
+            server.broadcast(MAGENTA + "God: if you want to shoot someone, send -> [ @<username> ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: Professional go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Professional go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         isProfessionalShot = false;
         server.setActiveClients(server.getClientThreads());
@@ -749,7 +778,7 @@ public class GameManager {
 
     public void psychologistNight(){
 
-        server.broadcast("God: Psychologist wakeUp you have -> " + citizenNightTime + " seconds!"
+        server.broadcast(CYAN + "God: Psychologist wakeUp you have -> " + citizenNightTime + " seconds!" + RESET
                 , server.getClientThreads());
 
         ArrayList<Server.ClientThread> psychologist = new ArrayList<>();
@@ -766,12 +795,12 @@ public class GameManager {
 
         if(psychologist.size() > 0) {
             server.setActiveClients(psychologist);
-            server.broadcast("God: if you want to mute someone, send -> [ @<username> ] ",
+            server.broadcast(MAGENTA + "God: if you want to mute someone, send -> [ @<username> ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: Psychologist go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Psychologist go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         isPsychologistMuted = false;
         server.setActiveClients(server.getClientThreads());
@@ -779,8 +808,8 @@ public class GameManager {
 
     public void invulnerableNight(){
 
-        server.broadcast("God: invulnerable Up wakeUp -> you have " + citizenNightTime + " seconds!"
-                , server.getClientThreads());
+        server.broadcast(CYAN + "God: invulnerable Up wakeUp -> you have " + citizenNightTime + " seconds!"
+                        + RESET, server.getClientThreads());
 
         ArrayList<Server.ClientThread> invulnerable = new ArrayList<>();
 
@@ -796,12 +825,12 @@ public class GameManager {
 
         if(invulnerable.size() > 0) {
             server.setActiveClients(invulnerable);
-            server.broadcast("God: if you want to know the result, send -> [ @!result ] ",
+            server.broadcast(MAGENTA + "God: if you want to know the result, send -> [ @!result ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: Invulnerable go to sleep", server.getClientThreads());
+        server.broadcast(BLUE + "God: Invulnerable go to sleep" + RESET, server.getClientThreads());
         waitAllClients();
         //isInvulnerableAttempt = false;
         server.setActiveClients(server.getClientThreads());
@@ -814,14 +843,14 @@ public class GameManager {
             ArrayList<Server.ClientThread> shuffledDead  = deadClients;
             Collections.shuffle(shuffledDead);
             if(shuffledDead.size() > 0) {
-                server.broadcast("God: Dead Roles: ", server.getClientThreads());
+                server.broadcast(BLACK + "God: Dead Roles: " + RESET, server.getClientThreads());
                 for (Server.ClientThread deadClient : shuffledDead) {
-                    server.broadcast("-> " + connectClientToRole.get(deadClient).toString(),
+                    server.broadcast("-> " + WHITE + connectClientToRole.get(deadClient).toString() + RESET,
                             server.getClientThreads());
                     sleep(1);
                 }
             }else{
-                server.broadcast("God: no one died", server.getClientThreads());
+                server.broadcast(GREEN + "God: no one died" + RESET, server.getClientThreads());
             }
         }
         isInvulnerableAttempt = false;
@@ -829,8 +858,8 @@ public class GameManager {
 
     public void mayorTime(){
 
-        server.broadcast("God: Mayor, do yo wanna cancel the voting ? you have "
-                + citizenNightTime + " seconds!", server.getClientThreads());
+        server.broadcast(CYAN + "God: Mayor, do yo wanna cancel the voting ? you have "
+                + citizenNightTime + " seconds!" + RESET, server.getClientThreads());
 
         ArrayList<Server.ClientThread> mayor
                 = new ArrayList<>();
@@ -847,12 +876,12 @@ public class GameManager {
 
         if(mayor.size() > 0) {
             server.setActiveClients(mayor);
-            server.broadcast("God: if you want to cancel the result, send -> [ @!cancel ] ",
+            server.broadcast(MAGENTA + "God: if you want to cancel the result, send -> [ @!cancel ] " + RESET,
                     server.getActiveClients());
         }
 
         sleep(citizenNightTime);
-        server.broadcast("God: End of mayor time", server.getClientThreads());
+        server.broadcast(BLUE + "God: End of mayor time" + RESET, server.getClientThreads());
         waitAllClients();
         isMayorAttempt = false;
         server.setActiveClients(server.getClientThreads());
@@ -864,7 +893,7 @@ public class GameManager {
 
     public void waitUntilFull(){
 
-        server.broadcast("God: say [!ready] to continue", server.getClientThreads());
+        server.broadcast(CYAN + "God: say [!ready] to continue" + RESET, server.getClientThreads());
         server.setWaitingToGo(true);
 
         while(true){
@@ -911,7 +940,7 @@ public class GameManager {
             synchronized (ct) {
                 ct.notify();
             }
-            ct.writeMsg("you are watching the game -> To logout enter [ !logout ]");
+            ct.writeMsg(YELLOW + "you are watching the game -> To logout enter [ !logout ]" + RESET);
         }
     }
 
@@ -920,24 +949,24 @@ public class GameManager {
         long start = System.currentTimeMillis();
         long end = start + dayChatTime * 1000;
 
-        server.broadcast("God: it's day again talk for " + dayChatTime + " seconds!",
+        server.broadcast(CYAN + "God: it's day again talk for " + dayChatTime + " seconds!" + RESET,
                 server.getClientThreads());
-        server.broadcast("God: to VOTE send -> [ !vote<space>@username ] ",
+        server.broadcast(CYAN + "God: to VOTE send -> [ !vote<space>@username ] " + RESET,
                 server.getClientThreads());
-        server.broadcast("God: to Skip Day send -> [ !READY ] ",
+        server.broadcast(CYAN + "God: to Skip Day send -> [ !READY ] " + RESET,
                 server.getClientThreads());
         notifyAllClients();
 
         while(System.currentTimeMillis() < end){
             sleep(1);
             if(readyToGo >= server.getMaxCapacity() - deadClients.size()){
-                server.broadcast("God: Day ended early" , server.getClientThreads());
+                server.broadcast(BLUE + "God: Day ended early" + RESET , server.getClientThreads());
                 sleep(2);
                 break;
             }
 
         }
-        server.broadcast("God: Day ends" , server.getClientThreads());
+        server.broadcast(BLUE + "God: Day ends" + RESET, server.getClientThreads());
         waitAllClients();
 
     }
@@ -947,10 +976,11 @@ public class GameManager {
         waitUntilFull();
 
         //day chat
-        server.broadcast("God: chat for " + firstDayChatTime + " seconds!", server.getClientThreads());
+        server.broadcast(CYAN + "God: chat for " + firstDayChatTime + " seconds!" + RESET
+                , server.getClientThreads());
         sleep(firstDayChatTime);
         waitAllClients();
-        server.broadcast("God: Day ends" , server.getClientThreads());
+        server.broadcast(BLUE + "God: Day ends" + RESET, server.getClientThreads());
     }
 
     public void applyVoting(){
@@ -974,10 +1004,10 @@ public class GameManager {
         }
 
         if(noOneIsOut){
-            server.broadcast("God: no one is out of the game",
+            server.broadcast(GREEN + "God: no one is out of the game" + RESET,
                     server.getClientThreads());
         }else{
-            server.broadcast("God: " + deadClient.getUsername() + " is out of the game",
+            server.broadcast(YELLOW + "God: " + deadClient.getUsername() + " is out of the game" + RESET,
                     server.getClientThreads());
             deadClients.add(deadClient);
             presentLastMoment(deadClient);
@@ -1002,26 +1032,25 @@ public class GameManager {
 
         if(mafiaCount == 0){
             keepGoing = false;
-            server.broadcast("God: Citizen's Won! THE END!", server.getClientThreads());
+            server.broadcast(GREEN + "God: Citizen's Won! THE END!" + RESET, server.getClientThreads());
             return true;
         }
         if(mafiaCount == citizenCount){
             keepGoing = false;
-            server.broadcast("God: Mafia's Won! THE END!", server.getClientThreads());
+            server.broadcast(RED + "God: Mafia's Won! THE END!" + RESET, server.getClientThreads());
             return true;
         }
         return false;
     }
 
     public void announceDeadClients(){
-        server.broadcast("God : List of players witch are out of the game from start: "
+        server.broadcast(BLACK + "God : List of players witch are out of the game from start: " + RESET
                 , server.getClientThreads());
         for(Server.ClientThread ct : deadClients){
-            server.broadcast("-> " + ct.getUsername(), server.getClientThreads());
+            server.broadcast("-> " + WHITE + ct.getUsername() + RESET, server.getClientThreads());
             sleep(1);
         }
     }
-
 
     public synchronized void game() {
 
