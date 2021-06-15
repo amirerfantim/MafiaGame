@@ -174,6 +174,15 @@ public class Server {
         //return true;
     }
 
+    public boolean checkUsername(String newUsername){
+        for(ClientThread ct : clientThreads){
+            if(newUsername.equalsIgnoreCase(ct.getUsername())){
+                return false;
+            }
+        }
+        return true;
+    }
+
     // if client sent LOGOUT message to exit
     synchronized void remove(int id) {
 
@@ -385,6 +394,8 @@ public class Server {
                     continue;
                 }
 
+                String[] splitMessage = message.split(" ");
+
                 if(message.equalsIgnoreCase("!LOGOUT")){
                     //display(username + " disconnected with a LOGOUT message.");
                     gameManager.disconnected(this);
@@ -397,12 +408,25 @@ public class Server {
                         Server.ClientThread ct = clientThreads.get(i);
                         writeMsg((i + 1) + ") " + ct.username + " since " + ct.date);
                     }
-                }
-
-                String[] voteString = message.split(" ");
-                if(canTalk) {
-                    if (!waitingToGo && !isLastMoment) {
-                        if (message.charAt(0) == '@') {
+                }else if(splitMessage[0].equalsIgnoreCase("!USERNAME")){
+                    if(checkUsername(splitMessage[1])){
+                        broadcast("God: " + username + " changed to " + splitMessage[1], getClientThreads());
+                        username = splitMessage[1];
+                    }else{
+                        writeMsg("there is a " + splitMessage[1] + " in the game");
+                    }
+                }else if(canTalk) {
+                    if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
+                        if(!isReady) {
+                            gameManager.ready();
+                            isReady = true;
+                            broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
+                                    , getClientThreads());
+                        }else{
+                            writeMsg("you said you are ready before!");
+                        }
+                    }else if (!waitingToGo && !isLastMoment) {
+                        if (message.length() > 0 && message.charAt(0) == '@') {
                             Player curPlayer = gameManager.getPlayer(this);
                             //String[] decodedMsg = message.split(" ");
                             if (curPlayer instanceof GodFather) {
@@ -427,18 +451,9 @@ public class Server {
                                 }
                             }
                         }
-                        else if (voteString[0].equalsIgnoreCase("!VOTE")) {
-                            if (voteString[1].charAt(0) == '@') {
-                                gameManager.vote(voteString[1].substring(1), this);
-                            }
-                        } else if (message.equalsIgnoreCase("!READY")) {
-                            if(!isReady) {
-                                gameManager.ready();
-                                isReady = true;
-                                broadcast(gameManager.getReadyToGo() + " number of players are ready so far"
-                                        , getClientThreads());
-                            }else{
-                                writeMsg("you said you are ready before!");
+                        else if (splitMessage[0].equalsIgnoreCase("!VOTE")) {
+                            if (splitMessage[1].charAt(0) == '@') {
+                                gameManager.vote(splitMessage[1].substring(1), this);
                             }
                         } else {
                             boolean confirmation = broadcast(username + ": " + message, activeClients);
@@ -449,9 +464,9 @@ public class Server {
                         }
 
                     }
-                }else if (voteString[0].equalsIgnoreCase("!VOTE") && !isLastMoment && !waitingToGo) {
-                    if (voteString[1].charAt(0) == '@') {
-                        gameManager.vote(voteString[1].substring(1), this);
+                }else if (splitMessage[0].equalsIgnoreCase("!VOTE") && !isLastMoment && !waitingToGo) {
+                    if (splitMessage[1].charAt(0) == '@') {
+                        gameManager.vote(splitMessage[1].substring(1), this);
                     }
                 }else if (message.equalsIgnoreCase("!READY") && !isLastMoment) {
                     if(!isReady) {

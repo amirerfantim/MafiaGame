@@ -38,7 +38,7 @@ public class GameManager {
     private int readyToGo = 0;
     private int targetToGo = 0;
 
-    private final int firstDayChatTime = 10, mafiaNightTime = 1, citizenNightTime = 1, dayChatTime = 300;
+    private final int firstDayChatTime = 10, mafiaNightTime = 20, citizenNightTime = 20, dayChatTime = 300;
 
     private boolean isGodFatherShot = false, isLectorDoctorHill = false, isDoctorHill = false,
             isDetectiveAttempt = false, isProfessionalShot = false,
