@@ -5,6 +5,10 @@ import java.io.*;
 import java.util.*;
 
 
+/**
+ * The type Client.
+ * client side of the multi-threading application
+ */
 //The Client that can be run as a console
 public class Client  {
 
@@ -26,12 +30,24 @@ public class Client  {
      *  username: the username
      */
 
+    /**
+     * Instantiates a new Client.
+     *
+     * @param server   the server
+     * @param port     the port
+     * @param username the username
+     */
     Client(String server, int port, String username) {
         this.server = server;
         this.port = port;
         this.username = username;
     }
 
+    /**
+     * Start boolean.
+     *
+     * @return the boolean
+     */
     /*
      * To start the chat
      */
@@ -88,6 +104,11 @@ public class Client  {
 
     }
 
+    /**
+     * Send message to server
+     *
+     * @param message the message
+     */
     /*
      * To send a message to the server
      */
@@ -125,6 +146,12 @@ public class Client  {
         }
 
     }
+
+    /**
+     * The entry point of application.
+     *
+     * @param args the input arguments
+     */
     /*
      * To start the Client in console mode use one of the following command
      * > java Client
@@ -175,6 +202,10 @@ public class Client  {
         client.disconnect();
     }
 
+    /**
+     * The type Listen from server.
+     * this listen from server all-the-time
+     */
     /*
      * a class that waits for the message from the server
      */

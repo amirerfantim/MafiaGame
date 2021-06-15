@@ -23,6 +23,11 @@ import java.util.HashMap;
 // vote end early if someone dead logout +
 
 
+/**
+ * The type Game manager.
+ * this manage the whole game
+ * this decide what server should do
+ */
 public class GameManager {
 
     private int numberOfPlayers, numberOfMafias, numberOfCitizens;
@@ -47,17 +52,51 @@ public class GameManager {
     private Server.ClientThread protectedByLector = null;
     private boolean votingHasBeenCanceled = false, keepGoing = true;
 
+    /**
+     * The constant BLACK color.
+     */
     public static final String	BLACK				= "\u001B[30m";
+    /**
+     * The constant RED color.
+     */
     public static final String	RED					= "\u001B[31m";
+    /**
+     * The constant GREEN color.
+     */
     public static final String	GREEN				= "\u001B[32m";
+    /**
+     * The constant YELLOW color.
+     */
     public static final String	YELLOW				= "\u001B[33m";
+    /**
+     * The constant BLUE color.
+     */
     public static final String	BLUE				= "\u001B[34m";
+    /**
+     * The constant MAGENTA color.
+     */
     public static final String	MAGENTA				= "\u001B[35m";
+    /**
+     * The constant CYAN color.
+     */
     public static final String	CYAN				= "\u001B[36m";
+    /**
+     * The constant WHITE color.
+     */
     public static final String	WHITE				= "\u001B[37m";
+    /**
+     * The constant RESET color.
+     */
     public static final String  RESET               = "\u001B[0m";
 
 
+    /**
+     * Instantiates a new Game manager.
+     *
+     * @param numberOfPlayers the number of players
+     * @param clientThreads   the client threads
+     * @param server          the server
+     */
     public GameManager(int numberOfPlayers, ArrayList<Server.ClientThread> clientThreads, Server server) {
         this.numberOfPlayers = numberOfPlayers;
         this.clientThreads = clientThreads;
@@ -66,10 +105,20 @@ public class GameManager {
         numberOfCitizens = numberOfPlayers - numberOfMafias;
     }
 
+    /**
+     * Gets ready to go clients.
+     *
+     * @return the ready to go clients
+     */
     public int getReadyToGo() {
         return readyToGo;
     }
 
+    /**
+     * Create players.
+     * this create players at the start of the game
+     * depend on how many players are in the game
+     */
     public void createPlayers() {
 
         if (numberOfMafias == 1) {
@@ -122,6 +171,10 @@ public class GameManager {
 
     }
 
+    /**
+     * Give roles.
+     * give clients their roles
+     */
     public void giveRoles() {
         Collections.shuffle(clientThreads);
         createPlayers();
@@ -152,6 +205,10 @@ public class GameManager {
 
     }
 
+    /**
+     * First day chat.
+     * this handle first day of chatroom
+     */
     public void firstDayChat() {
 
         for (Server.ClientThread clientThread : clientThreads) {
@@ -160,6 +217,10 @@ public class GameManager {
 
     }
 
+    /**
+     * First night.
+     * this handle first night of the game
+     */
     public void firstNight() {
 
         for (Server.ClientThread clientThread : clientThreads) {
@@ -200,6 +261,10 @@ public class GameManager {
 
     }
 
+    /**
+     * Show mafia team.
+     * @param ctToSend the ct to send
+     */
     public void showMafiaTeam(Server.ClientThread ctToSend) {
         int row = 1;
 
@@ -214,10 +279,21 @@ public class GameManager {
         }
     }
 
+    /**
+     * Gets player.
+     * enter the client, get the player!
+     * @param clientThread the client thread
+     * @return the player
+     */
     public Player getPlayer(Server.ClientThread clientThread) {
         return connectClientToRole.get(clientThread);
     }
 
+    /**
+     * Sleep.
+     * sleep a thread for a certain time
+     * @param seconds the seconds
+     */
     public void sleep(int seconds) {
         try {
             Thread.sleep(seconds * 1000L);
@@ -227,6 +303,9 @@ public class GameManager {
         }
     }
 
+    /**
+     * Notify all clients.
+     */
     public synchronized void notifyAllClients() {
         for (Server.ClientThread clientThread : server.getClientThreads()) {
             synchronized (clientThread) {
@@ -236,6 +315,11 @@ public class GameManager {
         }
     }
 
+    /**
+     * Disconnected.
+     * handle the works after a client diconnect
+     * @param ct the ct
+     */
 /*
     public synchronized void notifySomeClients(ArrayList<Server.ClientThread> cts) {
         for (Server.ClientThread clientThread : cts) {
@@ -253,12 +337,22 @@ public class GameManager {
         }
     }
 
+    /**
+     * Wait all clients.
+     */
     public synchronized void waitAllClients() {
         for (Server.ClientThread clientThread : server.clientThreads) {
             clientThread.setWait(true);
         }
     }
 
+    /**
+     * Is client died boolean.
+     * is client dead return true else false
+     *
+     * @param ct the ct
+     * @return the boolean
+     */
     public boolean isClientDied(Server.ClientThread ct){
         for(Server.ClientThread obj : deadClients){
             if(obj.equals(ct)){
@@ -268,6 +362,13 @@ public class GameManager {
         return false;
     }
 
+    /**
+     * God father shot.
+     * kill citizens
+     *
+     * @param usernameToFind the username to find
+     * @param godFatherCT    the god father client
+     */
     public void godFatherShot(String usernameToFind, Server.ClientThread godFatherCT) {
 
         Player player = null;
@@ -314,6 +415,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Lector hill.
+     * hill a mafia
+     *
+     * @param usernameToFind the username to find
+     * @param lectorCT       the lector client
+     */
     public void lectorHill(String usernameToFind, Server.ClientThread lectorCT){
         Player player = null;
         ArrayList<Server.ClientThread> lectorDoctor = new ArrayList<>();
@@ -365,6 +473,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Doctor hill.
+     * hill a player
+     *
+     * @param usernameToFind the username to find
+     * @param doctorCt       the doctor client
+     */
     public void doctorHill(String usernameToFind, Server.ClientThread doctorCt){
         Player player = null;
         ArrayList<Server.ClientThread> doctor = new ArrayList<>();
@@ -412,6 +527,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Detective attempt.
+     * know the team of the client -> mafia or citizen
+     *
+     * @param usernameToFind the username to find
+     * @param detectiveCT    the detective client
+     */
     public void detectiveAttempt(String usernameToFind, Server.ClientThread detectiveCT){
         Player player = null;
         ArrayList<Server.ClientThread> detective = new ArrayList<>();
@@ -450,6 +572,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Professional shot.
+     * shot a client
+     *
+     * @param usernameToFind the username to find
+     * @param professionalCT the professional ct
+     */
     public void professionalShot(String usernameToFind, Server.ClientThread professionalCT) {
 
         Player player = null;
@@ -490,6 +619,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Psychologist attempt.
+     * mute a client
+     *
+     * @param usernameToFind the username to find
+     * @param psychologistCT the psychologist client
+     */
     public void psychologistAttempt(String usernameToFind, Server.ClientThread psychologistCT) {
 
         ArrayList<Server.ClientThread> psychologist = new ArrayList<>();
@@ -525,6 +661,12 @@ public class GameManager {
 
     }
 
+    /**
+     * Invulnerable attempt.
+     * know the roles of the clients which are dead
+     *
+     * @param invulnerableCT the invulnerable client
+     */
     public void invulnerableAttempt(Server.ClientThread invulnerableCT) {
 
         ArrayList<Server.ClientThread> invulnerable = new ArrayList<>();
@@ -551,6 +693,12 @@ public class GameManager {
 
     }
 
+    /**
+     * Mayor attempt.
+     * can cancel the voting
+     *
+     * @param mayorCT the mayor client
+     */
     public void mayorAttempt(Server.ClientThread mayorCT) {
 
         ArrayList<Server.ClientThread> mayor = new ArrayList<>();
@@ -572,6 +720,13 @@ public class GameManager {
 
     }
 
+    /**
+     * Vote.
+     * voting process of a client
+     *
+     * @param usernameToFind the username to find
+     * @param currentCt      the current client
+     */
     public void vote(String usernameToFind, Server.ClientThread currentCt) {
 
         ArrayList<Server.ClientThread> psychologist = new ArrayList<>();
@@ -604,6 +759,9 @@ public class GameManager {
 
     }
 
+    /**
+     * Collect votes of the clients.
+     */
     public void collectVotes(){
         for(Server.ClientThread ct : server.getClientThreads()){
             for(Server.ClientThread ctVote : server.getClientThreads()){
@@ -614,6 +772,9 @@ public class GameManager {
         }
     }
 
+    /**
+     * Announce votes of each client.
+     */
     public void announceVotes(){
         StringBuilder string = new StringBuilder();
 
@@ -629,6 +790,9 @@ public class GameManager {
         }
     }
 
+    /**
+     * Collect de actives clients. " clients that didn't vote "
+     */
     public void collectDeActives(){
         int deActiveDaysToKick = 3;
 
@@ -651,6 +815,10 @@ public class GameManager {
         }
     }
 
+    /**
+     * Mafia night.
+     * wake mafia up then wait them
+     */
     public void mafiaNight(){
 
         server.broadcast(CYAN + "God: Night begins" + RESET , server.getClientThreads());
@@ -686,6 +854,10 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Doctor night.
+     * wake doctor up then wait it
+     */
     public void doctorNight(){
 
         server.broadcast(CYAN + "God: Doctor wakeUp & hill someone within " + citizenNightTime + " seconds!"
@@ -716,6 +888,10 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Detective night.
+     * wake detective up then wait it
+     */
     public void detectiveNight(){
 
         server.broadcast(CYAN + "God: Detective wakeUp -> you have " + citizenNightTime + " seconds!" + RESET
@@ -746,6 +922,10 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Professional night.
+     * wake Professional up then wait it
+     */
     public void professionalNight(){
 
         server.broadcast(CYAN + "God: Professional wakeUp you have -> " + citizenNightTime + " seconds!" + RESET
@@ -776,6 +956,10 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Psychologist night.
+     * wake Psychologist up then wait it
+     */
     public void psychologistNight(){
 
         server.broadcast(CYAN + "God: Psychologist wakeUp you have -> " + citizenNightTime + " seconds!" + RESET
@@ -806,6 +990,10 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Invulnerable night.
+     * wake Invulnerable up then wait it
+     */
     public void invulnerableNight(){
 
         server.broadcast(CYAN + "God: invulnerable Up wakeUp -> you have " + citizenNightTime + " seconds!"
@@ -836,6 +1024,11 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Invulnerable act.
+     * if Invulnerable attempted last night this method do the work.
+     * announce the role's of dead clients
+     */
     public void invulnerableAct(){
 
 
@@ -856,6 +1049,10 @@ public class GameManager {
         isInvulnerableAttempt = false;
     }
 
+    /**
+     * Mayor time.
+     * wake mayor up then wait it
+     */
     public void mayorTime(){
 
         server.broadcast(CYAN + "God: Mayor, do yo wanna cancel the voting ? you have "
@@ -887,10 +1084,18 @@ public class GameManager {
         server.setActiveClients(server.getClientThreads());
     }
 
+    /**
+     * Ready.
+     * increase readyToGo by 1
+     */
     public void ready() {
         readyToGo += 1;
     }
 
+    /**
+     * Wait until full.
+     * wait the game till all clients are ready
+     */
     public void waitUntilFull(){
 
         server.broadcast(CYAN + "God: say [!ready] to continue" + RESET, server.getClientThreads());
@@ -910,6 +1115,9 @@ public class GameManager {
         }
     }
 
+    /**
+     * Collect dead clients.
+     */
     public void collectDeadClients(){
 
         boolean isHereBefore = false;
@@ -932,6 +1140,11 @@ public class GameManager {
         }
     }
 
+    /**
+     * Present last moment.
+     * client can decide to watch the game or logout
+     * @param ct the ct
+     */
     public synchronized void presentLastMoment(Server.ClientThread ct){
         if(!ct.isLastMoment()) {
             ct.setLastMoment(true);
@@ -944,6 +1157,10 @@ public class GameManager {
         }
     }
 
+    /**
+     * Day time.
+     * day time chatroom & voting
+     */
     public void dayTime(){
 
         long start = System.currentTimeMillis();
@@ -971,6 +1188,9 @@ public class GameManager {
 
     }
 
+    /**
+     * First day.
+     */
     public void firstDay(){
         firstDayChat();
         waitUntilFull();
@@ -983,6 +1203,10 @@ public class GameManager {
         server.broadcast(BLUE + "God: Day ends" + RESET, server.getClientThreads());
     }
 
+    /**
+     * Apply voting.
+     * if mayor didn't canceled voting this method apply voting and the votes
+     */
     public void applyVoting(){
 
         Server.ClientThread deadClient = server.getClientThreads().get(0);
@@ -1016,6 +1240,11 @@ public class GameManager {
 
     }
 
+    /**
+     * Check end boolean.
+     * check if game reach end or not
+     * @return the boolean
+     */
     public boolean checkEnd(){
         Player player;
         int mafiaCount = 0, citizenCount = 0;
@@ -1043,6 +1272,9 @@ public class GameManager {
         return false;
     }
 
+    /**
+     * Announce dead clients.
+     */
     public void announceDeadClients(){
         server.broadcast(BLACK + "God : List of players witch are out of the game from start: " + RESET
                 , server.getClientThreads());
@@ -1052,6 +1284,10 @@ public class GameManager {
         }
     }
 
+    /**
+     * Game.
+     * this manage the whole game procedure
+     */
     public synchronized void game() {
 
         server.setActiveClients(server.getClientThreads());

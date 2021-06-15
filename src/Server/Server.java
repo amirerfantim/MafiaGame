@@ -6,11 +6,18 @@ import java.security.cert.CertificateNotYetValidException;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
+/**
+ * The type Server.
+ * server side of the multi-thread application
+ */
 // the server that can be run as a console
 public class Server {
     // a unique ID for each connection
     private static int uniqueId;
-    // an ArrayList to keep the list of the Client
+    /**
+     * The Client threads.
+     */
+// an ArrayList to keep the list of the Client
     protected ArrayList<ClientThread> clientThreads;
     // to display time
     private SimpleDateFormat simpleDateFormat;
@@ -25,13 +32,31 @@ public class Server {
     private boolean waitingToGo = false;
     private ArrayList<ClientThread> activeClients;
 
+    /**
+     * The constant RED.
+     */
     public static final String	RED					= "\u001B[31m";
+    /**
+     * The constant BLUE.
+     */
     public static final String	BLUE				= "\u001B[34m";
+    /**
+     * The constant CYAN.
+     */
     public static final String	CYAN				= "\u001B[36m";
+    /**
+     * The constant RESET.
+     */
     public static final String  RESET               = "\u001B[0m";
 
     //constructor that receive the port to listen to for connection as parameter
 
+    /**
+     * Instantiates a new Server.
+     *
+     * @param port        the port
+     * @param maxCapacity the max capacity
+     */
     public Server(int port, int maxCapacity) {
         // the port
         this.port = port;
@@ -43,26 +68,54 @@ public class Server {
         gameManager = new GameManager(this.maxCapacity, clientThreads, this);
     }
 
+    /**
+     * Gets max capacity.
+     *
+     * @return the max capacity
+     */
     public int getMaxCapacity() {
         return maxCapacity;
     }
 
+    /**
+     * Gets client threads.
+     *
+     * @return the client threads
+     */
     public ArrayList<ClientThread> getClientThreads() {
         return clientThreads;
     }
 
+    /**
+     * Gets active clients.
+     *
+     * @return the active clients
+     */
     public ArrayList<ClientThread> getActiveClients() {
         return activeClients;
     }
 
+    /**
+     * Sets active clients.
+     *
+     * @param activeClients the active clients
+     */
     public void setActiveClients(ArrayList<ClientThread> activeClients) {
         this.activeClients = activeClients;
     }
 
+    /**
+     * Sets waiting to go.
+     *
+     * @param waitingToGo the waiting to go
+     */
     public void setWaitingToGo(boolean waitingToGo) {
         this.waitingToGo = waitingToGo;
     }
 
+    /**
+     * Start the server
+     */
     public void start() {
         keepGoing = true;
 
@@ -123,7 +176,10 @@ public class Server {
         }
     }
 
-    // to stop the server
+    /**
+     * Stop.
+     */
+// to stop the server
     protected void stop() {
         keepGoing = false;
         try {
@@ -140,7 +196,14 @@ public class Server {
         System.out.println(time);
     }
 
-    // to broadcast a message to all Clients
+    /**
+     * Broadcast boolean.
+     *
+     * @param message   the message
+     * @param toSendMsg the clients which get the message
+     * @return the boolean if it was successful or not
+     */
+// to broadcast a message to all Clients
     public synchronized boolean broadcast(String message, ArrayList<ClientThread> toSendMsg) {
         // add timestamp to the message
         String time = simpleDateFormat.format(new Date());
@@ -164,6 +227,12 @@ public class Server {
 
     }
 
+    /**
+     * Send msg to client.
+     *
+     * @param message      the message
+     * @param clientThread the client thread
+     */
     public synchronized void sendMsgToClient(String message, ClientThread clientThread){
         String time = simpleDateFormat.format(new Date());
         String messageLf = time + " | " + message + "\n";
@@ -177,16 +246,12 @@ public class Server {
         //return true;
     }
 
-    public boolean checkUsername(String newUsername){
-        for(ClientThread ct : clientThreads){
-            if(newUsername.equalsIgnoreCase(ct.getUsername())){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // if client sent LOGOUT message to exit
+    /**
+     * Remove.
+     * remove a ct from the clientThreads
+     * @param id the id
+     */
+// if client sent LOGOUT message to exit
     synchronized void remove(int id) {
 
         String disconnectedClient = "";
@@ -203,6 +268,11 @@ public class Server {
         broadcast(notification + disconnectedClient + " has left the chat room." + notification, clientThreads);
     }
 
+    /**
+     * The entry point of application.
+     *
+     * @param args the input arguments
+     */
     /*
      *  To run as a console application
      * > java Server
@@ -228,26 +298,57 @@ public class Server {
         server.start();
     }
 
-    // One instance of this thread will run for each client
+    /**
+     * The type Client thread.
+     * this makes a thread for each client
+     */
+// One instance of this thread will run for each client
     class ClientThread extends Thread {
-        // the socket to get messages from client
+        /**
+         * The Socket.
+         */
+// the socket to get messages from client
         Socket socket;
+        /**
+         * The S input stream.
+         */
         DataInputStream sInput;
+        /**
+         * The S output stream.
+         */
         DataOutputStream sOutput;
-        // my unique id (easier for disconnection)
+        /**
+         * The Id of the client.
+         */
+// my unique id (easier for disconnection)
         int id;
-        // the Username of the Client
+        /**
+         * The Username of the client.
+         */
+// the Username of the Client
         String username;
-        // message object to receive message and its type
+        /**
+         * The Message.
+         */
+// message object to receive message and its type
         String message;
-        // timestamp
+        /**
+         * The Date.
+         */
+// timestamp
         String date;
         private boolean isWait = false, isLastMoment = false,isReady = false, canTalk = true ;
         private ClientThread vote = null;
         private ArrayList<ClientThread> votes = new ArrayList<>();
         private int deActiveInARow = 0;
 
-        // Constructor
+        /**
+         * Instantiates a new Client thread.
+         *
+         * @param server the server
+         * @param socket the socket
+         */
+// Constructor
         ClientThread(Server server, Socket socket) {
             // a unique id
             id = ++uniqueId;
@@ -292,68 +393,143 @@ public class Server {
             date = new Date().toString() + "\n";
         }
 
+        /**
+         * Is last moment boolean.
+         * is client dead or not?
+         *
+         * @return the boolean
+         */
         public boolean isLastMoment() {
             return isLastMoment;
         }
 
 
+        /**
+         * Gets vote.
+         *
+         * @return the vote
+         */
         public ClientThread getVote() {
             return vote;
         }
 
+        /**
+         * Gets votes.
+         *
+         * @return the votes
+         */
         public ArrayList<ClientThread> getVotes() {
             return votes;
         }
 
+        /**
+         * Is ready boolean.
+         *
+         * @return the boolean
+         */
         public boolean isReady() {
             return isReady;
         }
 
+        /**
+         * Gets de active in a row.
+         *
+         * @return the de active in a row
+         */
         public int getDeActiveInARow() {
             return deActiveInARow;
         }
 
+        /**
+         * Sets can talk.
+         *
+         * @param canTalk the can talk
+         */
         public void setCanTalk(boolean canTalk) {
             this.canTalk = canTalk;
         }
 
+        /**
+         * Sets votes.
+         *
+         * @param votes the votes
+         */
         public void setVotes(ArrayList<ClientThread> votes) {
             this.votes = votes;
         }
 
+        /**
+         * Gets username.
+         *
+         * @return the username
+         */
         public String getUsername() {
             return username;
         }
 
+        /**
+         * Sets wait.
+         *
+         * @param wait the wait
+         */
         public void setWait(boolean wait) {
             isWait = wait;
         }
 
+        /**
+         * Sets ready.
+         *
+         * @param ready the ready
+         */
         public void setReady(boolean ready) {
             isReady = ready;
         }
 
+        /**
+         * Sets de active in a row.
+         *
+         * @param deActiveInARow the de active in a row
+         */
         public void setDeActiveInARow(int deActiveInARow) {
             this.deActiveInARow = deActiveInARow;
         }
 
 
+        /**
+         * Sets vote.
+         *
+         * @param vote the vote
+         */
         public void setVote(ClientThread vote) {
             this.vote = vote;
         }
 
+        /**
+         * Sets last moment.
+         *
+         * @param lastMoment the last moment
+         */
         public void setLastMoment(boolean lastMoment) {
             isLastMoment = lastMoment;
         }
 
+        /**
+         * Add a vote.
+         *
+         * @param ct the ct
+         */
         public void addAVote(Server.ClientThread ct){
             votes.add(ct);
         }
 
+        /**
+         * Add de activeness by 1.
+         */
         public void addDeActiveness(){
             deActiveInARow +=1;
         }
 
+        // this manage whole input & output streams of the client
         public synchronized void run() {
 
             boolean keepGoing = true;
@@ -512,6 +688,12 @@ public class Server {
             return -1;
         }
 
+        /**
+         * Write msg boolean.
+         *
+         * @param msg the msg
+         * @return the boolean
+         */
         public boolean writeMsg(String msg) {
             // if Client is still connected send the message to it
             if (!socket.isConnected()) {
