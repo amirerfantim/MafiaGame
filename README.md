@@ -1,8 +1,6 @@
 
 # MafiaGame
 
-![MafiaGame Logo](https://github.com/amirerfantim/MafiaGame/blob/main/logo.png)
-
 MafiaGame is an interactive multiplayer game inspired by the popular party game "Mafia." It provides a platform for players to engage in a thrilling social deduction experience online. This README will guide you through the setup, rules, and features of MafiaGame.
 
 ## Table of Contents
