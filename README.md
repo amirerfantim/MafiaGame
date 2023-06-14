@@ -6,6 +6,7 @@ MafiaGame is an interactive multiplayer game inspired by the popular party game 
 ## Table of Contents
 
 - [Installation](#installation)
+- [Technologies](#Technologies)
 - [Game Rules](#game-rules)
 - [Features](#features)
 - [Contributing](#contributing)
