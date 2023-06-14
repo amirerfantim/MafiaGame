@@ -47,8 +47,8 @@ Follow these steps to set up MafiaGame:
    java client
    ```
 ## Technologies:
-Java: Core programming language used for the game logic and networking.
-Socket programming: Utilized for establishing communication between the server and clients.
+- Java: Core programming language used for the game logic and networking.
+- Socket programming: Utilized for establishing communication between the server and clients.
 
 ## Game Rules
 
